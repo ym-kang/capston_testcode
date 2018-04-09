@@ -62,7 +62,7 @@ vid = cv2.VideoCapture("videoplayback.mp4")
 while(True):
     start = time.time()
     ret,im = vid.read()
-    r = dn.detect_cam(net,meta,im)
+    r = dn.detect_numpy(net,meta,im)
     
      #im = vs.read()
     #ret, im = vid.read()

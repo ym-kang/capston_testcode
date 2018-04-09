@@ -15,8 +15,6 @@ def sample(probs):
 def c_array(ctype, values):
     new_values = values.ctypes.data_as(POINTER(ctype))
     return new_values
-<<<<<<< HEAD
-=======
 
 def array_to_image(arr):
     import numpy as np
@@ -30,7 +28,6 @@ def array_to_image(arr):
     im = IMAGE(w,h,c,data)
     return im, arr
 
->>>>>>> 13413e9c0a70ff67f2ea04c21a995377d2f42146
 
 class BOX(Structure):
     _fields_ = [("x", c_float),
@@ -57,7 +54,6 @@ class METADATA(Structure):
     _fields_ = [("classes", c_int),
                 ("names", POINTER(c_char_p))]
 
-<<<<<<< HEAD
 
 #young-muk test
 lib_kym  = CDLL("libkym.so",RTLD_GLOBAL)    
@@ -69,8 +65,6 @@ getMatArr = lib_kym.getMatArr
 getMatArr.restype = POINTER(c_float)
 
 '''
-=======
->>>>>>> 13413e9c0a70ff67f2ea04c21a995377d2f42146
 
 #lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
 lib = CDLL("libdarknet.so", RTLD_GLOBAL)
@@ -169,11 +163,11 @@ def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     free_image(im)
     free_detections(dets, num)
     return res
-<<<<<<< HEAD
     
 
 import libkym
 #from examples - detector-scipy-opencv.py
+'''
 def array_to_image(arr):
 
     arr = arr.transpose(2,0,1)
@@ -187,7 +181,7 @@ def array_to_image(arr):
     data = c_array(c_float, arr)
     print 'elapsed:', time.time()-cur
     im = IMAGE(w,h,c,data)
-    return im
+    return im'''
 
 
 def kym_arr_to_image(np_arr):
@@ -212,11 +206,9 @@ def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
     
     im = c_img
     
-=======
 
 def detect_numpy(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     im, arr = array_to_image(image)
->>>>>>> 13413e9c0a70ff67f2ea04c21a995377d2f42146
     num = c_int(0)
     pnum = pointer(num)
     predict_image(net, im)
@@ -231,16 +223,12 @@ def detect_numpy(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
                 b = dets[j].bbox
                 res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
     res = sorted(res, key=lambda x: -x[1])
-<<<<<<< HEAD
     #free_image(im)
     
-=======
->>>>>>> 13413e9c0a70ff67f2ea04c21a995377d2f42146
     free_detections(dets, num)
     return res
 
 
-<<<<<<< HEAD
 import time
 def detect_cam(net, meta, cam_img, thresh=.5, hier_thresh=.5, nms=.45):
     #im = load_image(cam_img, 0, 0)
@@ -269,8 +257,6 @@ def detect_cam(net, meta, cam_img, thresh=.5, hier_thresh=.5, nms=.45):
     free_detections(dets, num)
     return res
 
-=======
->>>>>>> 13413e9c0a70ff67f2ea04c21a995377d2f42146
 if __name__ == "__main__":
     #net = load_net("cfg/densenet201.cfg", "/home/pjreddie/trained/densenet201.weights", 0)
     #im = load_image("data/wolf.jpg", 0, 0)
