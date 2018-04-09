@@ -13,9 +13,8 @@ def sample(probs):
     return len(probs)-1
 
 def c_array(ctype, values):
-    arr = (ctype*len(values))()
-    arr[:] = values
-    return arr
+    new_values = values.ctypes.data_as(POINTER(ctype))
+    return new_values
 
 class BOX(Structure):
     _fields_ = [("x", c_float),
@@ -42,7 +41,17 @@ class METADATA(Structure):
     _fields_ = [("classes", c_int),
                 ("names", POINTER(c_char_p))]
 
-    
+
+#young-muk test
+lib_kym  = CDLL("libkym.so",RTLD_GLOBAL)    
+ipl_arr_to_image = lib_kym.ipl_arr_to_image
+ipl_arr_to_image.argtypes=[c_int,c_int,c_int,POINTER(c_float)]
+ipl_arr_to_image.restype=IMAGE
+'''
+getMatArr = lib_kym.getMatArr
+getMatArr.restype = POINTER(c_float)
+
+'''
 
 #lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
 lib = CDLL("libdarknet.so", RTLD_GLOBAL)
@@ -143,27 +152,74 @@ def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     return res
     
 
-
+import libkym
 #from examples - detector-scipy-opencv.py
 def array_to_image(arr):
+
     arr = arr.transpose(2,0,1)
     c = arr.shape[0]
     h = arr.shape[1]
     w = arr.shape[2]
+    
     arr = (arr/255.0).flatten()
+    
+    cur = time.time()
     data = c_array(c_float, arr)
+    print 'elapsed:', time.time()-cur
     im = IMAGE(w,h,c,data)
     return im
+
+
+def kym_arr_to_image(np_arr):
+    c = np_arr.shape[2]
+    h = np_arr.shape[0]
+    w = np_arr.shape[1]
+    np_arr = (np_arr).flatten()
+    data = c_array(c_float, np_arr)
+    im = ipl_arr_to_image(w,h,c,data)
+    return im
+
+
+
+#use ipl
+def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
+    #im = load_image(cam_img, 0, 0)
+    
+    #im = kym_arr_to_image(cam_img)
+    
+    #rgbgr_image(c_img)
+    
+    
+    im = c_img
+    
+    num = c_int(0)
+    pnum = pointer(num)
+    predict_image(net, im)
+    dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
+    num = pnum[0]
+    if (nms): do_nms_obj(dets, num, meta.classes, nms);
+
+    res = []
+    for j in range(num):
+        for i in range(meta.classes):
+            if dets[j].prob[i] > 0:
+                b = dets[j].bbox
+                res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
+    res = sorted(res, key=lambda x: -x[1])
+    #free_image(im)
+    
+    free_detections(dets, num)
+    return res
 
 
 import time
 def detect_cam(net, meta, cam_img, thresh=.5, hier_thresh=.5, nms=.45):
     #im = load_image(cam_img, 0, 0)
-    cur = time.time()
+    
+    #im = kym_arr_to_image(cam_img)
     im = array_to_image(cam_img)
     rgbgr_image(im)
     
-    print 'elapsed:', time.time()-cur
     
     num = c_int(0)
     pnum = pointer(num)
