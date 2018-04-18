@@ -20,7 +20,9 @@ submission/
 cfg/
 pascal-voc/
 backup/
+pascal_voc/
 weights/
+results/
 
 darknet
 .fuse*
@@ -31,5 +33,9 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *.swp
+<<<<<<< HEAD
+=======
+*.weights
+>>>>>>> temp
 *.a
 *.so
