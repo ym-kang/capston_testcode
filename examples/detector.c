@@ -1,10 +1,12 @@
 #include "darknet.h"
+#include "kym_log.h"//log feature
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
 
 void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear)
 {
+    log_file_init();    
 
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.list");
@@ -137,6 +139,10 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(net, buff);
 
+            //log current values
+            log_log(0,"detector.c",142,"%ld: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+            
+            
             //check validation set(preventing overfitting)
             //set_batch_network(net, 1);
             validate_detector_recall_param_net(net,valid_image_path,datacfg,cfgfile,weightfile);
@@ -510,12 +516,12 @@ void validate_detector_recall_param_net(network *net,char *valid_image_path,char
     //char **paths = (char **)list_to_array(plist);
     static list *plist = NULL;
     static char **paths = NULL;
-    if(plist==NULL)
+    if(!plist)
     {
-        printf("plist & paths  assigned");
+        
         plist = get_paths(valid_image_path); 
         paths = (char **)list_to_array(plist);
-        printf("plist & paths  assigned");
+        fprintf(stderr,"plist & paths  assigned\n");
     }
 
 
@@ -582,7 +588,8 @@ void validate_detector_recall_param_net(network *net,char *valid_image_path,char
         free_image(orig);
         free_image(sized);
     }
-
+    //logging
+    log_log(0,"detector.c",591,"%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
 
 
 
