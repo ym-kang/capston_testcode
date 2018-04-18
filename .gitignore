@@ -5,6 +5,8 @@
 *.png
 *.jpg
 *.pyc
+*.weights
+*.backup
 old/
 mnist/
 data/
@@ -18,6 +20,10 @@ submission/
 cfg/
 backup/
 pascal_voc/
+pascal-voc/
+weights/
+results/
+
 darknet
 .fuse*
 
@@ -27,4 +33,6 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *.swp
-
+*.weights
+*.a
+*.so

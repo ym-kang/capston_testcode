@@ -1,0 +1,145 @@
+
+test_kym.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <ipl_arr_to_image>:
+   0:	55                   	push   %rbp
+   1:	48 89 e5             	mov    %rsp,%rbp
+   4:	48 83 ec 50          	sub    $0x50,%rsp
+   8:	48 89 7d c8          	mov    %rdi,-0x38(%rbp)
+   c:	89 75 c4             	mov    %esi,-0x3c(%rbp)
+   f:	89 55 c0             	mov    %edx,-0x40(%rbp)
+  12:	89 4d bc             	mov    %ecx,-0x44(%rbp)
+  15:	4c 89 45 b0          	mov    %r8,-0x50(%rbp)
+  19:	48 c7 45 e0 00 00 00 	movq   $0x0,-0x20(%rbp)
+  20:	00 
+  21:	48 c7 45 e8 00 00 00 	movq   $0x0,-0x18(%rbp)
+  28:	00 
+  29:	48 c7 45 f0 00 00 00 	movq   $0x0,-0x10(%rbp)
+  30:	00 
+  31:	8b 45 c4             	mov    -0x3c(%rbp),%eax
+  34:	89 45 e0             	mov    %eax,-0x20(%rbp)
+  37:	8b 45 c0             	mov    -0x40(%rbp),%eax
+  3a:	89 45 e4             	mov    %eax,-0x1c(%rbp)
+  3d:	8b 45 bc             	mov    -0x44(%rbp),%eax
+  40:	89 45 e8             	mov    %eax,-0x18(%rbp)
+  43:	8b 45 c4             	mov    -0x3c(%rbp),%eax
+  46:	48 63 d0             	movslq %eax,%rdx
+  49:	8b 45 c0             	mov    -0x40(%rbp),%eax
+  4c:	48 98                	cltq   
+  4e:	48 0f af d0          	imul   %rax,%rdx
+  52:	8b 45 bc             	mov    -0x44(%rbp),%eax
+  55:	48 98                	cltq   
+  57:	48 0f af c2          	imul   %rdx,%rax
+  5b:	48 c1 e0 02          	shl    $0x2,%rax
+  5f:	48 89 c7             	mov    %rax,%rdi
+  62:	e8 00 00 00 00       	callq  67 <ipl_arr_to_image+0x67>
+  67:	48 89 45 f0          	mov    %rax,-0x10(%rbp)
+  6b:	8b 45 c4             	mov    -0x3c(%rbp),%eax
+  6e:	0f af 45 bc          	imul   -0x44(%rbp),%eax
+  72:	89 45 dc             	mov    %eax,-0x24(%rbp)
+  75:	c7 45 d0 00 00 00 00 	movl   $0x0,-0x30(%rbp)
+  7c:	e9 96 00 00 00       	jmpq   117 <ipl_arr_to_image+0x117>
+  81:	c7 45 d8 00 00 00 00 	movl   $0x0,-0x28(%rbp)
+  88:	eb 7d                	jmp    107 <ipl_arr_to_image+0x107>
+  8a:	c7 45 d4 00 00 00 00 	movl   $0x0,-0x2c(%rbp)
+  91:	eb 68                	jmp    fb <ipl_arr_to_image+0xfb>
+  93:	48 8b 55 f0          	mov    -0x10(%rbp),%rdx
+  97:	8b 45 d8             	mov    -0x28(%rbp),%eax
+  9a:	0f af 45 c4          	imul   -0x3c(%rbp),%eax
+  9e:	0f af 45 c0          	imul   -0x40(%rbp),%eax
+  a2:	89 c1                	mov    %eax,%ecx
+  a4:	8b 45 d0             	mov    -0x30(%rbp),%eax
+  a7:	0f af 45 c4          	imul   -0x3c(%rbp),%eax
+  ab:	01 c1                	add    %eax,%ecx
+  ad:	8b 45 d4             	mov    -0x2c(%rbp),%eax
+  b0:	01 c8                	add    %ecx,%eax
+  b2:	48 98                	cltq   
+  b4:	48 c1 e0 02          	shl    $0x2,%rax
+  b8:	48 01 c2             	add    %rax,%rdx
+  bb:	8b 45 d0             	mov    -0x30(%rbp),%eax
+  be:	0f af 45 dc          	imul   -0x24(%rbp),%eax
+  c2:	89 c1                	mov    %eax,%ecx
+  c4:	8b 45 d4             	mov    -0x2c(%rbp),%eax
+  c7:	0f af 45 bc          	imul   -0x44(%rbp),%eax
+  cb:	01 c1                	add    %eax,%ecx
+  cd:	8b 45 d8             	mov    -0x28(%rbp),%eax
+  d0:	01 c8                	add    %ecx,%eax
+  d2:	48 98                	cltq   
+  d4:	48 8d 0c 85 00 00 00 	lea    0x0(,%rax,4),%rcx
+  db:	00 
+  dc:	48 8b 45 b0          	mov    -0x50(%rbp),%rax
+  e0:	48 01 c8             	add    %rcx,%rax
+  e3:	f3 0f 10 00          	movss  (%rax),%xmm0
+  e7:	f3 0f 10 0d 00 00 00 	movss  0x0(%rip),%xmm1        # ef <ipl_arr_to_image+0xef>
+  ee:	00 
+  ef:	f3 0f 5e c1          	divss  %xmm1,%xmm0
+  f3:	f3 0f 11 02          	movss  %xmm0,(%rdx)
+  f7:	83 45 d4 01          	addl   $0x1,-0x2c(%rbp)
+  fb:	8b 45 d4             	mov    -0x2c(%rbp),%eax
+  fe:	3b 45 c4             	cmp    -0x3c(%rbp),%eax
+ 101:	7c 90                	jl     93 <ipl_arr_to_image+0x93>
+ 103:	83 45 d8 01          	addl   $0x1,-0x28(%rbp)
+ 107:	8b 45 d8             	mov    -0x28(%rbp),%eax
+ 10a:	3b 45 bc             	cmp    -0x44(%rbp),%eax
+ 10d:	0f 8c 77 ff ff ff    	jl     8a <ipl_arr_to_image+0x8a>
+ 113:	83 45 d0 01          	addl   $0x1,-0x30(%rbp)
+ 117:	8b 45 d0             	mov    -0x30(%rbp),%eax
+ 11a:	3b 45 c0             	cmp    -0x40(%rbp),%eax
+ 11d:	0f 8c 5e ff ff ff    	jl     81 <ipl_arr_to_image+0x81>
+ 123:	48 8b 45 c8          	mov    -0x38(%rbp),%rax
+ 127:	48 8b 55 e0          	mov    -0x20(%rbp),%rdx
+ 12b:	48 89 10             	mov    %rdx,(%rax)
+ 12e:	48 8b 55 e8          	mov    -0x18(%rbp),%rdx
+ 132:	48 89 50 08          	mov    %rdx,0x8(%rax)
+ 136:	48 8b 55 f0          	mov    -0x10(%rbp),%rdx
+ 13a:	48 89 50 10          	mov    %rdx,0x10(%rax)
+ 13e:	48 8b 45 c8          	mov    -0x38(%rbp),%rax
+ 142:	c9                   	leaveq 
+ 143:	c3                   	retq   
+
+0000000000000144 <array_to_image>:
+ 144:	55                   	push   %rbp
+ 145:	48 89 e5             	mov    %rsp,%rbp
+ 148:	48 83 ec 40          	sub    $0x40,%rsp
+ 14c:	48 89 7d d8          	mov    %rdi,-0x28(%rbp)
+ 150:	89 75 d4             	mov    %esi,-0x2c(%rbp)
+ 153:	89 55 d0             	mov    %edx,-0x30(%rbp)
+ 156:	89 4d cc             	mov    %ecx,-0x34(%rbp)
+ 159:	4c 89 45 c0          	mov    %r8,-0x40(%rbp)
+ 15d:	48 c7 45 e0 00 00 00 	movq   $0x0,-0x20(%rbp)
+ 164:	00 
+ 165:	48 c7 45 e8 00 00 00 	movq   $0x0,-0x18(%rbp)
+ 16c:	00 
+ 16d:	48 c7 45 f0 00 00 00 	movq   $0x0,-0x10(%rbp)
+ 174:	00 
+ 175:	8b 45 d4             	mov    -0x2c(%rbp),%eax
+ 178:	89 45 e0             	mov    %eax,-0x20(%rbp)
+ 17b:	8b 45 d0             	mov    -0x30(%rbp),%eax
+ 17e:	89 45 e4             	mov    %eax,-0x1c(%rbp)
+ 181:	8b 45 cc             	mov    -0x34(%rbp),%eax
+ 184:	89 45 e8             	mov    %eax,-0x18(%rbp)
+ 187:	8b 45 d4             	mov    -0x2c(%rbp),%eax
+ 18a:	48 63 d0             	movslq %eax,%rdx
+ 18d:	8b 45 d0             	mov    -0x30(%rbp),%eax
+ 190:	48 98                	cltq   
+ 192:	48 0f af d0          	imul   %rax,%rdx
+ 196:	8b 45 cc             	mov    -0x34(%rbp),%eax
+ 199:	48 98                	cltq   
+ 19b:	48 0f af c2          	imul   %rdx,%rax
+ 19f:	48 c1 e0 02          	shl    $0x2,%rax
+ 1a3:	48 89 c7             	mov    %rax,%rdi
+ 1a6:	e8 00 00 00 00       	callq  1ab <array_to_image+0x67>
+ 1ab:	48 89 45 f0          	mov    %rax,-0x10(%rbp)
+ 1af:	48 8b 45 d8          	mov    -0x28(%rbp),%rax
+ 1b3:	48 8b 55 e0          	mov    -0x20(%rbp),%rdx
+ 1b7:	48 89 10             	mov    %rdx,(%rax)
+ 1ba:	48 8b 55 e8          	mov    -0x18(%rbp),%rdx
+ 1be:	48 89 50 08          	mov    %rdx,0x8(%rax)
+ 1c2:	48 8b 55 f0          	mov    -0x10(%rbp),%rdx
+ 1c6:	48 89 50 10          	mov    %rdx,0x10(%rax)
+ 1ca:	48 8b 45 d8          	mov    -0x28(%rbp),%rax
+ 1ce:	c9                   	leaveq 
+ 1cf:	c3                   	retq   

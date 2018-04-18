@@ -68,6 +68,7 @@ EXECOBJ = $(addprefix $(OBJDIR), $(EXECOBJA))
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
+
 #all: obj backup results $(SLIB) $(ALIB) $(EXEC)
 all: obj  results $(SLIB) $(ALIB) $(EXEC)
 
@@ -86,6 +87,22 @@ $(OBJDIR)%.o: %.c $(DEPS)
 
 $(OBJDIR)%.o: %.cu $(DEPS)
 	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
+
+
+
+kym: test_kym.o test_kym_cpp.o 
+#gcc $(CFLAGS) -shared test_kym.o -o libkym.so $(LDFLAGS) -L. -ldarknet 
+
+	gcc -shared test_kym.o test_kym_cpp.o -o libkym.so -L. -ldarknet $(LDFLAGS) $(CFLAGS) `python-config --includes` `python-config --libs`
+	
+test_kym_cpp.o: examples/test_kym_cpp.cpp include/test_kym_hpp.hpp
+	gcc -c -Iinclude -I/usr/include/python2.7 -Isrc examples/test_kym_cpp.cpp  -fPIC
+
+
+test_kym.o: examples/test_kym.c include/test_kym.h
+	gcc -c -Iinclude -I/usr/include/python2.7 -Isrc examples/test_kym.c  -fPIC
+
+
 
 obj:
 	mkdir -p obj
