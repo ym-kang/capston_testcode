@@ -40,11 +40,23 @@ FILE* log_get_fp()
 {
     return L.fp;
 }
-void log_file_init()
+void log_file_open()
 {
     if(!L.fp)
     {
         L.fp = fopen("training.log","a+");
+    }
+}
+void log_file_close()
+{
+    if(!L.fp)
+    {
+        return;
+    }
+    else
+    {
+        fclose(L.fp);
+        L.fp = NULL;
     }
 }
 
@@ -105,6 +117,7 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 
   /* Acquire lock */
   lock();
+  log_file_open();  
 
   /* Get current time */
   time_t t = time(NULL);
@@ -139,7 +152,7 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
     va_end(args);
     fprintf(L.fp, "\n");
   }
-
+    log_file_close();  
   /* Release lock */
   unlock();
 }

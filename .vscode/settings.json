@@ -1,8 +1,7 @@
 {
     "files.associations": {
         "darknet.h": "c",
-        "videoio_c.h": "c"
+        "videoio_c.h": "c",
+        "kym_log.h": "c"
     }
-
-    
 }
