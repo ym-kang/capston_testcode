@@ -16,6 +16,8 @@ convnet/
 decaf/
 submission/
 cfg/
+backup/
+pascal_voc/
 darknet
 .fuse*
 
@@ -25,3 +27,4 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *.swp
+
