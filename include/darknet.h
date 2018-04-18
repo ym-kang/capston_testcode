@@ -796,5 +796,5 @@ int *read_intlist(char *s, int *n, int d);
 size_t rand_size_t();
 float rand_normal();
 float rand_uniform(float min, float max);
-
+//image* array_to_image(float** arr);
 #endif

@@ -5,10 +5,12 @@ static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,2
 
 void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear)
 {
+
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.list");
     char *backup_directory = option_find_str(options, "backup", "/backup/");
-
+    char *valid_image_path = option_find_str(options, "valid", "data/valid.list");
+    
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
@@ -134,6 +136,12 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             char buff[256];
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(net, buff);
+
+            //check validation set(preventing overfitting)
+            //set_batch_network(net, 1);
+            validate_detector_recall_param_net(net,valid_image_path,datacfg,cfgfile,weightfile);
+            
+            
         }
         if(i%10000==0 || (i < 1000 && i%100 == 0)){
 #ifdef GPU
@@ -486,10 +494,105 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
     fprintf(stderr, "Total Detection Time: %f Seconds\n", what_time_is_it_now() - start);
 }
 
-void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
+void validate_detector_recall_param_net(network *net,char *valid_image_path,char *datacfg,char *cfgfile, char *weightfile)
+{
+    //list *options = read_data_cfg(datacfg);
+    //char *valid_image_path = option_find_str(options, "valid", "data/valid.list");
+
+
+    //network *net = load_network(cfgfile, weightfile, 0);
+    //set_batch_network(net, 1);
+    fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
+    srand(time(0));
+
+    //list *plist = get_paths(valid_image_path);  //get_paths("data/coco_val_5k.list");
+    //char **paths = (char **)list_to_array(plist);
+    static list *plist = NULL;
+    static char **paths = NULL;
+    if(plist==NULL)
+    {
+        printf("plist & paths  assigned");
+        plist = get_paths(valid_image_path); 
+        paths = (char **)list_to_array(plist);
+        printf("plist & paths  assigned");
+    }
+
+
+    
+
+    layer l = net->layers[net->n-1];
+
+    int j, k;
+
+    int m = plist->size;
+    int i=0;
+
+    float thresh = .001;
+    float iou_thresh = .5;
+    float nms = .4;
+
+    int total = 0;
+    int correct = 0;
+    int proposals = 0;
+    float avg_iou = 0;
+
+    for(i = 0; i < m; ++i){
+        char *path = paths[i];
+        image orig = load_image_color(path, 0, 0);
+        image sized = resize_image(orig, net->w, net->h);
+        char *id = basecfg(path);
+        network_predict(net, sized.data);
+        int nboxes = 0;
+        detection *dets = get_network_boxes(net, sized.w, sized.h, thresh, .5, 0, 1, &nboxes);
+        if (nms) do_nms_obj(dets, nboxes, 1, nms);
+
+        char labelpath[4096];
+        find_replace(path, "images", "labels", labelpath);
+        find_replace(labelpath, "JPEGImages", "labels", labelpath);
+        find_replace(labelpath, ".jpg", ".txt", labelpath);
+        find_replace(labelpath, ".JPEG", ".txt", labelpath);
+
+        int num_labels = 0;
+        box_label *truth = read_boxes(labelpath, &num_labels);
+        for(k = 0; k < nboxes; ++k){
+            if(dets[k].objectness > thresh){
+                ++proposals;
+            }
+        }
+        for (j = 0; j < num_labels; ++j) {
+            ++total;
+            box t = {truth[j].x, truth[j].y, truth[j].w, truth[j].h};
+            float best_iou = 0;
+            for(k = 0; k < l.w*l.h*l.n; ++k){
+                float iou = box_iou(dets[k].bbox, t);
+                if(dets[k].objectness > thresh && iou > best_iou){
+                    best_iou = iou;
+                }
+            }
+            avg_iou += best_iou;
+            if(best_iou > iou_thresh){
+                ++correct;
+            }
+        }
+
+        fprintf(stderr, "%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
+        free_detections(dets,nboxes);
+        free(id);
+        free_image(orig);
+        free_image(sized);
+    }
+
+
+
+
+}
+
+
+void validate_detector_recall(char *datacfg,char *cfgfile, char *weightfile)
 {
     list *options = read_data_cfg(datacfg);
     char *valid_image_path = option_find_str(options, "valid", "data/valid.list");
+
 
     network *net = load_network(cfgfile, weightfile, 0);
     set_batch_network(net, 1);
@@ -555,6 +658,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
         }
 
         fprintf(stderr, "%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
+        
         free(id);
         free_image(orig);
         free_image(sized);

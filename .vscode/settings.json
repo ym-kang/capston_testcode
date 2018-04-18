@@ -1,6 +1,19 @@
 {
+    "python.pythonPath": "/usr/bin/python",
     "files.associations": {
         "darknet.h": "c",
-        "videoio_c.h": "c"
+        "array": "c",
+        "image.h": "c",
+        "system_error": "c",
+        "type_traits": "c",
+        "videoio_c.h": "c",
+        "test_kym.h": "c",
+        "math.h": "c",
+        "numpy.h": "c",
+        "initializer_list": "cpp",
+        "utility": "cpp",
+        "cmath": "cpp",
+        "complex": "cpp",
+        "slist": "cpp"
     }
 }
