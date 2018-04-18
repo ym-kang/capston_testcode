@@ -56,10 +56,12 @@ class METADATA(Structure):
 
 
 #young-muk test
+'''
 lib_kym  = CDLL("libkym.so",RTLD_GLOBAL)    
 ipl_arr_to_image = lib_kym.ipl_arr_to_image
 ipl_arr_to_image.argtypes=[c_int,c_int,c_int,POINTER(c_float)]
 ipl_arr_to_image.restype=IMAGE
+'''
 '''
 getMatArr = lib_kym.getMatArr
 getMatArr.restype = POINTER(c_float)
@@ -67,7 +69,9 @@ getMatArr.restype = POINTER(c_float)
 '''
 
 #lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
-lib = CDLL("libdarknet.so", RTLD_GLOBAL)
+import os 
+#lib = CDLL("./libdarknet.so")
+lib = CDLL("./libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
 lib.network_height.argtypes = [c_void_p]
@@ -165,7 +169,7 @@ def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     return res
     
 
-import libkym
+#import libkym
 #from examples - detector-scipy-opencv.py
 '''
 def array_to_image(arr):
@@ -208,6 +212,7 @@ def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
     
 
 def detect_numpy(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
+    
     im, arr = array_to_image(image)
     num = c_int(0)
     pnum = pointer(num)

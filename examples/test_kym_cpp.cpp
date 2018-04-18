@@ -67,7 +67,7 @@ static PyObject* cos_func(PyObject* self, PyObject* args)
 }
 
 static PyMethodDef mymethods[] = {
-  {"cos_func",cos_func,0,NULL},
+  {"cos_func",cos_func,METH_VARARGS,NULL},
    {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
