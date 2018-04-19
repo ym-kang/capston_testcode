@@ -19,6 +19,8 @@ void ipl_into_image(IplImage* src, image im)
         }
     }
 }
+
+
 */
 int cvRound(double value) {return(ceil(value));}  
 
