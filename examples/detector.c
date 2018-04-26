@@ -12,7 +12,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     char *train_images = option_find_str(options, "train", "data/train.list");
     char *backup_directory = option_find_str(options, "backup", "/backup/");
     char *valid_image_path = option_find_str(options, "valid", "data/valid.list");
-    
+    char *train_valid_image_path = option_find_str(options, "train_valid", "data/train_valid.list");
+
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
@@ -145,7 +146,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             
             //check validation set(preventing overfitting)
             //set_batch_network(net, 1);
-            validate_detector_recall_param_net(net,valid_image_path,datacfg,cfgfile,weightfile);
+            validate_detector_recall_param_net(net,train_valid_image_path,datacfg,cfgfile,weightfile);//train-set
+            validate_detector_recall_param_net(net,valid_image_path,datacfg,cfgfile,weightfile);//test-set
             
             
         }
@@ -512,18 +514,18 @@ void validate_detector_recall_param_net(network *net,char *valid_image_path,char
     fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
     srand(time(0));
 
-    //list *plist = get_paths(valid_image_path);  //get_paths("data/coco_val_5k.list");
-    //char **paths = (char **)list_to_array(plist);
+    list *plist = get_paths(valid_image_path);  //get_paths("data/coco_val_5k.list");
+    char **paths = (char **)list_to_array(plist);
+    /*
     static list *plist = NULL;
     static char **paths = NULL;
     if(!plist)
     {
-        
         plist = get_paths(valid_image_path); 
         paths = (char **)list_to_array(plist);
         fprintf(stderr,"plist & paths  assigned\n");
     }
-
+    */
 
     
 
@@ -592,7 +594,8 @@ void validate_detector_recall_param_net(network *net,char *valid_image_path,char
     log_log(0,"detector.c",591,"%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
 
 
-
+    free_list(plist);
+    free(paths);
 }
 
 

@@ -15,10 +15,11 @@ def sample(probs):
 def c_array(ctype, values):
     new_values = values.ctypes.data_as(POINTER(ctype))
     return new_values
-
+import cv2
 def array_to_image(arr):
     import numpy as np
     # need to return old values to avoid python freeing memory
+    arr = cv2.cvtColor(arr,cv2.COLOR_BGR2RGB)
     arr = arr.transpose(2,0,1)
     c = arr.shape[0]
     h = arr.shape[1]
