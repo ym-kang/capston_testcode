@@ -589,13 +589,15 @@ void validate_detector_recall_param_net(network *net,char *valid_image_path,char
         free(id);
         free_image(orig);
         free_image(sized);
+        
+        free(path);
     }
     //logging
     log_log(0,"detector.c",591,"%5d %5d %5d\tRPs/Img: %.2f\tIOU: %.2f%%\tRecall:%.2f%%\n", i, correct, total, (float)proposals/(i+1), avg_iou*100/total, 100.*correct/total);
 
-
-    free_list(plist);
     free(paths);
+    free_list(plist);
+    
 }
 
 
