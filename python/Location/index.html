@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Marker Clustering</title>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script>
+	var offset = 0;
+	var map;
+	var markers;
+	var labels = ['dog1','dog2','dog3','cat1','cat2','cat3'];
+	
+      function initMap() {
+
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 18,
+          center: {lat:35.886906, lng: 128.60928}
+        });
+
+        // Create an array of alphabetical characters used to label the markers.
+        
+
+        // Add some markers to the map.
+        // Note: The code uses the JavaScript Array.prototype.map() method to
+        // create an array of markers based on a given "locations" array.
+        // The map() method here has nothing to do with the Google Maps API.
+        markers = objs.map(function(location, i) {
+          return new google.maps.Marker({
+            position: {lat:objs[i].lat,lng:objs[i].lng},
+            label: objs.name,//labels[i % labels.length],
+			map : map
+          });
+        });
+
+        // Add a marker clusterer to manage the markers.
+        //var markerCluster = new MarkerClusterer(map, markers,
+        //    {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+      }
+	  
+      var objs = [
+        {lat:35.88781041262922, lng: 128.60928, name: 'dog'},
+		{lat:35.88763768518697, lng: 128.60993171619353, name: 'dog'},
+		{lat:35.88718547887236, lng: 128.61033449895214, name: 'dog'},
+		{lat:35.886626521127646, lng: 128.61033449895214, name: 'dog'},
+		{lat:35.88617431481304, lng: 128.60993171619353, name: 'dog'},
+		{lat:35.886001587370785, lng: 128.60928, name: 'dog'},
+		{lat:35.88617431481304, lng: 128.6086282838065, name: 'dog'},
+		{lat:35.886626521127646, lng: 128.60822550104788, name: 'dog'},
+		{lat:35.88718547887236, lng: 128.60822550104788, name: 'dog'},
+		{lat:35.88763768518697, lng: 128.6086282838065, name: 'dog'}
+      ]
+	  
+	  function updateLoc(){
+		  var i;
+		  //update location
+		  for (i=0;i<objs.length;i++){
+		  objs[i] = {lat:objs[i].lat + offset,lng:objs[i].lng+offset, name: objs[i].name}
+		  
+		  }
+		  offset += 0.00001; //increase offset
+		  
+		  //remove all marker
+		  for(i=0;i<markers.length;i++){
+		  markers[i].setMap(null);
+		  }
+		  
+		  markers = objs.map(function(location, i) {
+          return new google.maps.Marker({
+            position: {lat:objs[i].lat,lng:objs[i].lng},
+            label: objs.name,//labels[i % labels.length],
+			map : map
+          });
+		  
+        });
+	  }
+	  
+	  function updateLocFromServer(data){
+		var i;
+		var parsed_data = JSON.parse(data);
+		
+		 objs = []
+		  //update location
+		  for (i=0;i<parsed_data.length;i++){
+		  var obj = {lat:parsed_data[i].lat ,lng:parsed_data[i].lng, name: parsed_data[i].name}
+		  objs.push(obj)
+		  }
+		  
+		  
+		  //remove all marker
+		  for(i=0;i<markers.length;i++){
+		  markers[i].setMap(null);
+		  }
+		  
+		  markers = objs.map(function(location, i) {
+          return new google.maps.Marker({
+            position: {lat:objs[i].lat,lng:objs[i].lng},
+            label: objs[i].name,//labels[i % labels.length],
+			map : map
+			});  
+        });
+	  }
+	  
+	  //setInterval(updateLoc,1000);
+	  
+	  
+	 
+	  $(document).ready(function(){
+    var socket = new WebSocket('ws://localhost:9000/ws');
+
+	function sendRequest(){
+		socket.send('Hi');
+	}
+	
+    socket.onopen = function(event){
+        sendRequest();
+    }
+	
+	setInterval(sendRequest,1000);
+
+    socket.onmessage = function(event){
+        console.log(event.data);
+		updateLocFromServer(event.data)
+	
+	};
+
+    $(window).unload(function(event){
+        socket.close();
+    });
+});
+	
+	
+	
+    </script>
+    <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js">
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCk1svGr_eeqb2aJaXy42u9e8xshST59ek&callback=initMap">
+    </script>
+  </body>
+</html>
