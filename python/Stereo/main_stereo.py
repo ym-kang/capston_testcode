@@ -21,6 +21,19 @@ def coords_mouse_disp(event,x,y,flags,param):
 		Distance = np.around(Distance*0.01, decimals=2)
 		print('Distance : ' + str(Distance) + ' m')
 
+def calculateDist(x,y):
+	average=0
+	for u in range (-1,2):
+		for v in range (-1,2):
+			average += disp[y+u,x+v]
+	average = average/9
+	Distance = -593.93*average**(3) + 1506.8*average**(2) - 1373.1*average + 522.06
+	Distance = np.around(Distance*0.01, decimals=2)
+	print('Distance : ' + str(Distance) + ' m')
+	return Distance
+
+
+
 wb = Workbook()
 ws=wb.active
 
@@ -45,10 +58,10 @@ imgpointsL = []
 print('Starting calibration for the 2 cameras... ')
 
 # Call all saved images
-for i in range (0,64):
+for i in range (0,40):
 	t= str(i)
-	ChessImgR = cv2.imread('chessboard-R'+t+'.png',0)
-	ChessImgL = cv2.imread('chessboard-L'+t+'.png',0)
+	ChessImgR = cv2.imread('python/Stereo/imgs/chessboard-R'+t+'.png',0)
+	ChessImgL = cv2.imread('python/Stereo/imgs/chessboard-L'+t+'.png',0)
 	retR, cornersR = cv2.findChessboardCorners(ChessImgR, (9,6),None)
 	retL, cornersL = cv2.findChessboardCorners(ChessImgL, (9,6),None)
 
@@ -132,93 +145,115 @@ wls_filter.setSigmaColor(sigma)
 #************************************
 #***** Starting the StreoVision *****
 #************************************
+useOcam = False
 
-# Call the two cameras
-devpath = liboCams.FindCamera('oCam')
-if devpath is None:
-	exit()
+if useOcam:
+	# Call the two cameras
+	devpath = liboCams.FindCamera('oCam')
+	if devpath is None:
+		exit()
 
-test = liboCams.oCams(devpath, verbose = 1)
-fmtlist = test.GetFormatList()
-ctrlist = test.GetControlList()
-test.Close()
+	test = liboCams.oCams(devpath, verbose = 1)
+	fmtlist = test.GetFormatList()
+	ctrlist = test.GetControlList()
+	test.Close()
 
-test = liboCams.oCams(devpath, verbose = 0)
-test.Set(fmtlist[0])
-name = test.GetName()
-test.Start()
+	test = liboCams.oCams(devpath, verbose = 0)
+	test.Set(fmtlist[0])
+	name = test.GetName()
+	test.Start()
+else:
+	cap = cv2.VideoCapture(0)
 
-while True:
-	# start reading Camera images
-	camR, camL = test.GetFrame(mode=2)
+valueReady=False
+def GetFrameAndCalculateStereo():
+	global disp,frameR,frameL,valueReady
+	while True:
+		
+		if useOcam:
+			# start reading Camera images
+			camR, camL = test.GetFrame(mode=2)
 
-	frameR = cv2.cvtColor(camR, cv2.COLOR_BAYER_GB2BGR)
-	frameL = cv2.cvtColor(camL, cv2.COLOR_BAYER_GB2BGR)
+			frameR = cv2.cvtColor(camR, cv2.COLOR_BAYER_GB2BGR)
+			frameL = cv2.cvtColor(camL, cv2.COLOR_BAYER_GB2BGR)
+		else:
+			ret,frm = cap.read()
+			camR = camL = frm
+			frameR = frameL = camR
+		valueReady = True
+		# Rectify the images on rotation and alignement
+		Left_nice = cv2.remap(frameL, Left_Stereo_Map[0], Left_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT, 0)
+		Right_nice = cv2.remap(frameR, Right_Stereo_Map[0], Right_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT,0)
 
-	# Rectify the images on rotation and alignement
-	Left_nice = cv2.remap(frameL, Left_Stereo_Map[0], Left_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT, 0)
-	Right_nice = cv2.remap(frameR, Right_Stereo_Map[0], Right_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT,0)
+	##	# Draw Red lines
+	##	For line in range(0, int(Right_nice.shape[0]/20)) : # Draw the lines on the images Then numer of line is defines by the image Size/20
+	##		Left_nice[line*20,:]=(0,0,255)
+	##		Right_nice[line*20,:]=(0,0,255)
+	##
+	##	For line in range(0, int(frameR.shape[0]/20)): # Draw the lines on the images then numer of line is defines by the image size/20
+	##		frameL[line*20,:]=(0,255,0)
+	##		frameR[line*20,:]=(0,255,0)
 
-##	# Draw Red lines
-##	For line in range(0, int(Right_nice.shape[0]/20)) : # Draw the lines on the images Then numer of line is defines by the image Size/20
-##		Left_nice[line*20,:]=(0,0,255)
-##		Right_nice[line*20,:]=(0,0,255)
-##
-##	For line in range(0, int(frameR.shape[0]/20)): # Draw the lines on the images then numer of line is defines by the image size/20
-##		frameL[line*20,:]=(0,255,0)
-##		frameR[line*20,:]=(0,255,0)
+		# Show the Undistorted images
+		#cv2.imshow('Both Images', np.hstack([Left_nice, Right_nice]))
+		#cv2.imshow('Normal', np.hstack([frameL, frameR]))
 
-	# Show the Undistorted images
-	#cv2.imshow('Both Images', np.hstack([Left_nice, Right_nice]))
-	#cv2.imshow('Normal', np.hstack([frameL, frameR]))
+		# Convert from color(BGR) to gray
+		grayR = cv2.cvtColor(Right_nice, cv2.COLOR_BGR2GRAY)
+		grayL = cv2.cvtColor(Left_nice, cv2.COLOR_BGR2GRAY)
 
-	# Convert from color(BGR) to gray
-	grayR = cv2.cvtColor(Right_nice, cv2.COLOR_BGR2GRAY)
-	grayL = cv2.cvtColor(Left_nice, cv2.COLOR_BGR2GRAY)
+		# Compute the 2 images for the Depth_image
+		disp = stereo.compute(grayL, grayR)#.astype(np.float32)/16
+		dispL = disp
+		dispR = stereoR.compute(grayR, grayL)
+		dispL = np.int16(dispL)
+		dispR = np.int16(dispR)
 
-	# Compute the 2 images for the Depth_image
-	disp = stereo.compute(grayL, grayR)#.astype(np.float32)/16
-	dispL = disp
-	dispR = stereoR.compute(grayR, grayL)
-	dispL = np.int16(dispL)
-	dispR = np.int16(dispR)
+		# Using the WLS filter
+		filteredImg = wls_filter.filter(dispL, grayL, None, dispR)
+		filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX)
+		filteredImg = np.uint8(filteredImg)
+		#cv2.imshow('Disparity Map', filteredImg)
+		disp=((disp.astype(np.float32)/16)-min_disp)/num_disp
 
-	# Using the WLS filter
-	filteredImg = wls_filter.filter(dispL, grayL, None, dispR)
-	filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX)
-	filteredImg = np.uint8(filteredImg)
-	#cv2.imshow('Disparity Map', filteredImg)
-	disp=((disp.astype(np.float32)/16)-min_disp)/num_disp
+	##	# Resize the image for faster executions
+	##	dispR = cv2.resize(disp,None, fx=0.7, fy=0.7, interpolation = cv2.INTER_AREA)
 
-##	# Resize the image for faster executions
-##	dispR = cv2.resize(disp,None, fx=0.7, fy=0.7, interpolation = cv2.INTER_AREA)
+		# Filtering the Results with a closing filter
+		closing = cv2.morphologyEx(disp, cv2.MORPH_CLOSE, kernel)
 
-	# Filtering the Results with a closing filter
-	closing = cv2.morphologyEx(disp, cv2.MORPH_CLOSE, kernel)
+		# Colors map
+		dispc = (closing-closing.min())*255
+		dispC = dispc.astype(np.uint8)
+		disp_Color=cv2.applyColorMap(dispC, cv2.COLORMAP_OCEAN)
+		filt_Color = cv2.applyColorMap(filteredImg, cv2.COLORMAP_OCEAN)
 
-	# Colors map
-	dispc = (closing-closing.min())*255
-	dispC = dispc.astype(np.uint8)
-	disp_Color=cv2.applyColorMap(dispC, cv2.COLORMAP_OCEAN)
-	filt_Color = cv2.applyColorMap(filteredImg, cv2.COLORMAP_OCEAN)
+		# Show the result for the Depth_image
+		#cv2.imshow('Disparity', disp)
+		#cv2.imshow('Closing', closing)
+		#cv2.imshow('Color Depth', disp_Color)
+		cv2.imshow('Filtered Color Depth', filt_Color)
 
-	# Show the result for the Depth_image
-	#cv2.imshow('Disparity', disp)
-	#cv2.imshow('Closing', closing)
-	#cv2.imshow('Color Depth', disp_Color)
-	cv2.imshow('Filtered Color Depth', filt_Color)
+		# Mouse click
+		cv2.setMouseCallback("Filtered Color Depth", coords_mouse_disp, filt_Color)
 
-	# Mouse click
-	cv2.setMouseCallback("Filtered Color Depth", coords_mouse_disp, filt_Color)
+		# End the program
+		if cv2.waitKey(1) & 0xFF == ord(' '):
+			break
 
-	# End the program
-	if cv2.waitKey(1) & 0xFF == ord(' '):
-		break
+	# Save excel
+	##wb.save("data4.xlsx")
 
-# Save excel
-##wb.save("data4.xlsx")
+	# Release the Cameras
+	test.Stop()
+	cv2.destroyAllWindows()
+	test.Close()
 
-# Release the Cameras
-test.Stop()
-cv2.destroyAllWindows()
-test.Close()
+import threading
+def RunThread(): #run camera, stereo calculation
+	t = threading.Thread(target=GetFrameAndCalculateStereo)
+	t.start()
+
+
+if __name__=="main":
+	GetFrameAndCalculateStereo()

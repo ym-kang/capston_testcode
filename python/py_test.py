@@ -87,7 +87,7 @@ else:
 #x=  libkym.cos_func(1)
 #export PYTHONPATH=.
 #import test_image
-import test_line
+#import test_line
 #based on image
 def main2():
     for i,name in enumerate(test_image.imgs):
@@ -116,15 +116,25 @@ def main2():
         print "spf: ", (time.time()-start)
         1072
 
+import Stereo
 def main1():
+    Stereo.main_stereo.RunThread() #read video, stereo calculation
     v = cv2.VideoWriter()
     #1280x720   1920x1072
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 30, (1280,720), True)
     #cv2.
     frm=0
     while(True):
+
+
         start = time.time()
-        ret,im = vid.read()
+        #ret,im = vid.read()  
+        if not Stereo.main_stereo.valueReady:
+            continue  #value not ready -> wait
+
+
+        im = Stereo.main_stereo.frameL
+        
         #im = cv2.resize(im, (0,0), fx=0.5, fy=0.5) 
 
         r = dn.detect_numpy(net,meta,im,thresh=.5)

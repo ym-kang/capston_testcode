@@ -21,31 +21,47 @@ objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2)
 objpoints = []
 imgpointsR = []
 imgpointsL = []
+useOcam = False
 
-# setting camera
-devpath = liboCams.FindCamera('oCam')
-if devpath is None:
-	exit()
+if useOcam:
+	# setting camera
+	devpath = liboCams.FindCamera('oCam')
+	if devpath is None:
+		exit()
 
-test = liboCams.oCams(devpath, verbose=1)
-fmtlist = test.GetFormatList()
-ctrlist = test.GetControlList()
-test.Close()
+	test = liboCams.oCams(devpath, verbose=1)
+	fmtlist = test.GetFormatList()
+	ctrlist = test.GetControlList()
+	test.Close()
 
-test = liboCams.oCams(devpath, verbose=0)
-test.Set(fmtlist[0])
-name = test.GetName()
-test.SetControl(10094850,200) # control exposure
-test.Start()
+	test = liboCams.oCams(devpath, verbose=0)
+	test.Set(fmtlist[0])
+	name = test.GetName()
+	test.SetControl(10094850,200) # control exposure
+	test.Start()
+else: 
+	cap = cv2.VideoCapture(0)
+
 
 # call the two camera
 while True:
-	camR, camL = test.GetFrame(mode=2)
-	
-	frameR = cv2.cvtColor(camR, cv2.COLOR_BAYER_GB2BGR)
-	frameL = cv2.cvtColor(camL, cv2.COLOR_BAYER_GB2BGR)
-	grayR = cv2.cvtColor(frameR, cv2.COLOR_BGR2GRAY)
-	grayL = cv2.cvtColor(frameL, cv2.COLOR_BGR2GRAY)
+	if useOcam:
+		camR, camL = test.GetFrame(mode=2)
+	else:
+		ret, camL = cap.read()
+		camR= camL
+		
+	if useOcam:
+		frameR = cv2.cvtColor(camR, cv2.COLOR_BAYER_GB2BGR)
+		frameL = cv2.cvtColor(camL, cv2.COLOR_BAYER_GB2BGR)
+		grayR = cv2.cvtColor(frameR, cv2.COLOR_BGR2GRAY)
+		grayL = cv2.cvtColor(frameL, cv2.COLOR_BGR2GRAY)
+
+	else:
+		frameR = camR
+		frameL = camL
+		grayR = cv2.cvtColor(frameR, cv2.COLOR_BGR2GRAY)
+		grayL = cv2.cvtColor(frameL, cv2.COLOR_BGR2GRAY)
 
 # Find the chess board corners
 	retL, cornersL = cv2.findChessboardCorners(grayL, (9,6), None)
