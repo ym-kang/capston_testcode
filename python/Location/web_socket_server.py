@@ -25,7 +25,7 @@ class ObjectInfo:#좌표정보를 json으로 변환
     def __init__(self):
         pass
         #self.objList = objList
-    use_random = True
+    use_random = False
     
     def toMessage(self):#none -> random data
 
