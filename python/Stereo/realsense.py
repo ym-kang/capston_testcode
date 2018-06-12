@@ -156,9 +156,17 @@ def calculateDist(x,y):
     if count is not 0:
         average = average/count
     return average/1000.0
+def SetFov():
+    import Location
+    Location.sensor_data.CameraMath.field_of_view_horizental = 59
+    Location.sensor_data.CameraMath.filed_of_view_vertical = 46
+    Location.sensor_data.CameraMath.horizental_resoultion = 640
+    Location.sensor_data.CameraMath.vertical_resoultion = 480
+    
 
 import threading
 def runRSCam():
+    SetFov()
     #t1 = threading.Thread(target=depth)
     t2 = threading.Thread(target=test1)
     #t1.start()
