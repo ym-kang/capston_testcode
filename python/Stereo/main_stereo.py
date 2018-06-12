@@ -29,6 +29,7 @@ def calculateDist(x,y):
 	average = average/9
 	Distance = -593.93*average**(3) + 1506.8*average**(2) - 1373.1*average + 522.06
 	Distance = np.around(Distance*0.01, decimals=2)
+	print('x,y: '+str(x),str(y))
 	print('Distance : ' + str(Distance) + ' m')
 	return Distance
 
@@ -255,5 +256,5 @@ def RunThread(): #run camera, stereo calculation
 	t.start()
 
 
-if __name__=="main":
+if __name__=="__main__":
 	GetFrameAndCalculateStereo()

@@ -115,10 +115,11 @@ def main2():
         print "fps: ", 1/(time.time()-start)
         print "spf: ", (time.time()-start)
         1072
-
+import math
 import Stereo
 def main1():
-    Stereo.main_stereo.RunThread() #read video, stereo calculation
+    #Stereo.main_stereo.RunThread() #read video, stereo calculation
+    Stereo.realsense.runRSCam()
     v = cv2.VideoWriter()
     #1280x720   1920x1072
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 30, (1280,720), True)
@@ -129,12 +130,13 @@ def main1():
 
         start = time.time()
         #ret,im = vid.read()  
-        if not Stereo.main_stereo.valueReady:
-            continue  #value not ready -> wait
+        #if not Stereo.main_stereo.valueReady:
+        #    continue  #value not ready -> wait
+        if not Stereo.realsense.valueReady:
+            continue
 
-
-        im = Stereo.main_stereo.frameL
-        
+        #im = Stereo.main_stereo.frameL
+        im = Stereo.realsense.img
         #im = cv2.resize(im, (0,0), fx=0.5, fy=0.5) 
 
         r = dn.detect_numpy(net,meta,im,thresh=.5)
@@ -165,11 +167,14 @@ def main1():
             (int(k[2][0]+k[2][2]/2),int(k[2][1]+k[2][3]/2))
             ,(0,0,255),thickness=2)
             cv2.putText(im,k[0],(int(k[2][0]),int(k[2][1])),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
-            cv2.putText(im,str(int(k[1]*100))+"%",(int(k[2][0]),int(k[2][1])+50),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
+            cv2.putText(im,str(int(k[1]*100))+"%",(int(k[2][0]),int(k[2][1])-50),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
             
             x = int(k[2][0])
             y = int(k[2][1])
-            distance = 2
+            #distance = Stereo.main_stereo.calculateDist(x,y)
+            distance = Stereo.realsense.calculateDist(x,y)
+            cv2.putText(im,str(round(distance,2) )+"m",(int(k[2][0]),int(k[2][1])+50),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
+            
             name = k[0]
 
             camdatas.append(loc.sensor_data.CameraMath(x,y,distance,name))
