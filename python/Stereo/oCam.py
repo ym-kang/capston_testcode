@@ -5,7 +5,7 @@ import cv2
 import time
 import sys
 import numpy as np
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 devpath = liboCams.FindCamera('oCam')
 if devpath is None:
@@ -14,6 +14,7 @@ if devpath is None:
 test = liboCams.oCams(devpath, verbose=1)
 fmtlist = test.GetFormatList()
 ctrlist = test.GetControlList()
+test.SetControl(10094850,400) # control exposure
 test.Close()
 
 test = liboCams.oCams(devpath, verbose=0)
@@ -24,9 +25,12 @@ test.Start()
 start_time = time.time()
 
 frame_cnt = 0
+
 while True:
+	
+	
 	stereo = cv2.StereoBM_create(numDisparities = 16 , blockSize = 15)
-	frameR, frameL = test.GetFrame(mode=2)
+	frameL, frameR = test.GetFrame(mode=2)
 	
 	grayR = cv2.cvtColor(frameR, cv2.COLOR_BAYER_GB2GRAY)
 	grayL = cv2.cvtColor(frameL, cv2.COLOR_BAYER_GB2GRAY)

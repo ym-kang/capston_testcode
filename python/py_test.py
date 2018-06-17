@@ -21,7 +21,7 @@ elif(tiny):
     if(movie):
         #net = dn.load_net("cfg/yolov2-tiny.cfg","yolov2-tiny.weights",0)
         #meta = dn.load_meta("cfg/coco.data")
-        #net = dn.load_net("cfg/yolov2-tiny.cfg","yolov2-tiny.weights",0)  mobilenet_yolo_coco
+        #net = dn.load_net("cfg/yolov2-tiny.cfg","yolov2-tiny.weights",0) # mobilenet_yolo_coco
         net = dn.load_net("../dataset_test/cfg/yolov2-tiny-kym-run.cfg","backup1/yolov2-tiny-kym-train.backup",0)
         meta = dn.load_meta("../dataset_test/cfg/kym_test.data")
        
@@ -118,8 +118,9 @@ def main2():
 import math
 import Stereo
 def main1():
-    #Stereo.main_stereo.RunThread() #read video, stereo calculation
-    Stereo.realsense.runRSCam()
+    Stereo.main_stereo.showDepth=False
+    Stereo.main_stereo.RunThread() #read video, stereo calculation
+    #Stereo.realsense.runRSCam()
     v = cv2.VideoWriter()
     #1280x720   1920x1072
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 30, (1280,720), True)
@@ -130,16 +131,16 @@ def main1():
 
         start = time.time()
         #ret,im = vid.read()  
-        #if not Stereo.main_stereo.valueReady:
-        #    continue  #value not ready -> wait
-        if not Stereo.realsense.valueReady:
-            continue
+        if not Stereo.main_stereo.stereoReady:
+            continue  #value not ready -> wait
+        #if not Stereo.realsense.valueReady:
+        #    continue
 
-        #im = Stereo.main_stereo.frameL
-        im = Stereo.realsense.img
+        im = Stereo.main_stereo.frameL
+        #im = Stereo.realsense.img
         #im = cv2.resize(im, (0,0), fx=0.5, fy=0.5) 
 
-        r = dn.detect_numpy(net,meta,im,thresh=.5)
+        r = dn.detect_numpy(net,meta,im,thresh=.2)
         
         #im = vs.read()
         #ret, im = vid.read()
@@ -162,18 +163,25 @@ def main1():
         for i, k in enumerate(r):
             #if(k[0]!='jetson'):
             #    continue
+            x = int(k[2][0])
+            y = int(k[2][1])
+            distance,avg = Stereo.main_stereo.calculateDist(x,y)
+            if(distance>1):
+                color = (120,120,32) #sky color
+            else:
+                color = (0,0,255) #red color
+
             cv2.rectangle(im,
             (int(k[2][0]-k[2][2]/2),int(k[2][1]-k[2][3]/2)),
             (int(k[2][0]+k[2][2]/2),int(k[2][1]+k[2][3]/2))
-            ,(0,0,255),thickness=2)
-            cv2.putText(im,k[0],(int(k[2][0]),int(k[2][1])),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
-            cv2.putText(im,str(int(k[1]*100))+"%",(int(k[2][0]),int(k[2][1])-50),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
+            ,color,thickness=2)
+            cv2.putText(im,k[0],(int(k[2][0]),int(k[2][1])),cv2.FONT_HERSHEY_PLAIN,2,color,thickness=2)
+            cv2.putText(im,str(int(k[1]*100))+"%",(int(k[2][0]),int(k[2][1])-50),cv2.FONT_HERSHEY_PLAIN,2,color,thickness=2)
             
-            x = int(k[2][0])
-            y = int(k[2][1])
-            #distance = Stereo.main_stereo.calculateDist(x,y)
-            distance = Stereo.realsense.calculateDist(x,y)
-            cv2.putText(im,str(round(distance,2) )+"m",(int(k[2][0]),int(k[2][1])+50),cv2.FONT_HERSHEY_PLAIN,2,(120,120,32),thickness=2)
+            
+            #distance = Stereo.realsense.calculateDist(x,y)
+            #distance = 2
+            cv2.putText(im,str(round(distance,2) )+"m",(int(k[2][0]),int(k[2][1])+50),cv2.FONT_HERSHEY_PLAIN,2,color,thickness=2)
             
             name = k[0]
 

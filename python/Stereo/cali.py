@@ -21,7 +21,11 @@ objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2)
 objpoints = []
 imgpointsR = []
 imgpointsL = []
-useOcam = False
+useOcam = True
+
+def resize(img):
+	resized = cv2.resize(img,(0,0),fx=.7,fy=.7)
+	return resized
 
 if useOcam:
 	# setting camera
@@ -37,7 +41,7 @@ if useOcam:
 	test = liboCams.oCams(devpath, verbose=0)
 	test.Set(fmtlist[0])
 	name = test.GetName()
-	test.SetControl(10094850,200) # control exposure
+	test.SetControl(10094850,400) # control exposure
 	test.Start()
 else: 
 	cap = cv2.VideoCapture(0)
@@ -46,7 +50,7 @@ else:
 # call the two camera
 while True:
 	if useOcam:
-		camR, camL = test.GetFrame(mode=2)
+		camL, camR = test.GetFrame(mode=2)
 	else:
 		ret, camL = cap.read()
 		camR= camL
@@ -66,8 +70,8 @@ while True:
 # Find the chess board corners
 	retL, cornersL = cv2.findChessboardCorners(grayL, (9,6), None)
 	retR, cornersR = cv2.findChessboardCorners(grayR, (9,6), None)
-	cv2.imshow('imgR', frameR)
-	cv2.imshow('imgL', frameL)
+	cv2.imshow('imgR', resize(frameR))
+	cv2.imshow('imgL', resize(frameL))
 
 # if found, add object points, image points (after refinding them)
 	if (retL==True) & (retR==True) & (False == C):
@@ -83,15 +87,15 @@ while True:
 # Draw and display the corners
 		cv2.drawChessboardCorners(grayR,(9,6),corners2R,retR)
 		cv2.drawChessboardCorners(grayL,(9,6),corners2L,retL)
-		cv2.imshow('Frame R', grayR)
-		cv2.imshow('Frame L', grayL)
+		cv2.imshow('Frame R', resize(grayR))
+		cv2.imshow('Frame L', resize(grayL))
 		if cv2.waitKey(0) & 0xFF == ord('s'):
 			t = str(i)
 			print('Saved'+t)
 
 			# Save the image
-			cv2.imwrite('chessboard-R'+t+'.png', frameR)
-			cv2.imwrite('chessboard-L'+t+'.png', frameL)
+			cv2.imwrite('python/Stereo/imgs/chessboard-R'+t+'.png', frameR)
+			cv2.imwrite('python/Stereo/imgs/chessboard-L'+t+'.png', frameL)
 			i=i+1
 		else:
 			print('canceled')
