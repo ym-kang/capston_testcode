@@ -31,8 +31,19 @@ def coords_mouse_disp(event,x,y,flags,param):
 def calculateDist(x,y):
 	average=0
 	count = 0
+	width = disp.shape[1]
+	height = disp.shape[0]
 	for u in range (-1,2):
 		for v in range (-1,2):
+			
+			new_y = y+u
+			new_x = x+v
+
+			if new_x<0 or new_x>=width:
+				continue
+			if new_y<0 or new_y>=height:
+				continue
+
 			current_val =  disp[y+u,x+v]
 			if(current_val<=0):
 				continue
@@ -329,6 +340,7 @@ import threading
 def RunThread(): #run camera, stereo calculation
 	t = threading.Thread(target=GetFrameAndCalculateStereo)
 	t.start()
+	return t
 
 
 if __name__=="__main__":
