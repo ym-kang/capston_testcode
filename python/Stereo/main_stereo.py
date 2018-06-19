@@ -25,7 +25,7 @@ def coords_mouse_disp(event,x,y,flags,param):
 def coords_mouse_disp(event,x,y,flags,param):
 	if event == cv2.EVENT_LBUTTONDBLCLK:	
 		dist,disp = calculateDist(x,y)
-		print("distancw="+str(dist))
+		print("distance="+str(dist))
 		print("disparity="+str(disp))
 
 def calculateDist(x,y):
@@ -57,10 +57,10 @@ def calculateDist(x,y):
 	#Distance = -593.93*average**(3) + 1506.8*average**(2) - 1373.1*average + 522.06
 	#ocam camera baseline(distance) : 12cm
 	#sensor size 4.96x3.72mm  https://www.digicamdb.com/sensor-sizes/
-	#focal length = ??????
+	#focal length = 3.6mm
 	Distance =0.0
 	if(average!=0):
-		Distance = 0.120 * 0.005 /(average*0.00496)
+		Distance = 0.120 * 0.0036 /(average*0.00496)
 
 	#Distance = np.around(Distance*0.01, decimals=2)
 	#print('x,y: '+str(x),str(y))
@@ -93,8 +93,8 @@ imgpointsL = []
 print('Starting calibration for the 2 cameras... ')
 
 # Call all saved images
-for i in range (0,80):
-	if(i%3!=0):
+for i in range (0,20):
+	if(i%1!=0):
 		continue
 	t= str(i)
 	print(t)
@@ -234,6 +234,7 @@ def GetFrame():
 			count = 0
 			print("cam fps:"+str(round(1/(time.time()-start),2)))
 		
+
 
 
 showDepth= True

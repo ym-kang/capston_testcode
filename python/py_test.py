@@ -1,3 +1,4 @@
+#-*- coding: utf-8 -*-
 import sys, os
 import darknet as dn
 import Location as loc
@@ -5,6 +6,7 @@ import time
 import numpy
 import cv2
 import math
+import line_detection
 
 
 sys.path.append("../")
@@ -111,8 +113,7 @@ def MainRealSense():
     #im = vs.read()
     
 
-v = cv2.VideoWriter()
-v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 30, (1280,720), True)
+
 
 
 
@@ -120,8 +121,11 @@ threshold = .2
 
 
 def MainOCAM():
+    v = cv2.VideoWriter()
+    v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,960), True)
     global Stereo
     import Stereo
+    import Stereo.main_stereo
     Stereo.main_stereo.showDepth=False
     Stereo.main_stereo.RunThread() #read video, stereo calculation
 
@@ -135,13 +139,18 @@ def MainOCAM():
         im = Stereo.main_stereo.frameL
         r = dn.detect_numpy(net,meta,im,thresh=threshold)     
         
-        camdatas = MarkImg(im,r,stereo=True)
+        marked_im  = numpy.copy(im)
+        camdatas = MarkImg(marked_im,r,stereo=True)
         loc.sensor_data.cameraDatas = camdatas
+
+        line_left,line_right = line_detection.detectLine(im)
+        marked_im = line_detection.draw_line(line_left,line_right,marked_im)
+
         frm+=1
-        cv2.imshow("img",im)
-        writeVideo = False
+        cv2.imshow("img",marked_im)
+        writeVideo = True
         if writeVideo:
-            v.write(im)
+            v.write(marked_im)
         key = cv2.waitKey(1)
         if(key==ord('q')):
             break
@@ -150,24 +159,34 @@ def MainOCAM():
             print "spf: ", (time.time()-start)
 
     if writeVideo:
-        v.release()
+        v.release()  
 
 
-def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0510.mp4"):
+def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"):
+    v = cv2.VideoWriter()
+    v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,720), True)
     vid = cv2.VideoCapture(video_name)
     frm=0
     while(True):
         start = time.time()
         ret, im = vid.read() 
+        if not ret:
+            break
+
         r = dn.detect_numpy(net,meta,im,threshold)     
         
-        camdatas = MarkImg(im,r,stereo=False)
+        marked_im  = numpy.copy(im)
+        camdatas = MarkImg(marked_im,r,stereo=False)
         loc.sensor_data.cameraDatas = camdatas
+
+        line_left,line_right = line_detection.detectLine(im)
+        marked_im = line_detection.draw_line(line_left,line_right,marked_im)
+
         frm+=1
-        cv2.imshow("img",im)
-        writeVideo = False
+        cv2.imshow("img",marked_im)
+        writeVideo = True
         if writeVideo:
-            v.write(im)
+            v.write(marked_im)
         key = cv2.waitKey(1)
         if(key==ord('q')):
             break
@@ -180,8 +199,10 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0510.mp4"
         
 
 if __name__ is "__main__":
+    init()
+    #MainVideo('../dataset_test/data/test_movie/test_video_0619.mp4')
+    #MainVideo('../졸프영상파일/Test01.mp4')
     MainOCAM()
-
 
 #main2()
        

@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 def testImgFile():
     imgL=cv2.imread('ImageL.png',0)

@@ -2,7 +2,7 @@
 from collections import namedtuple
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 class LaneInfo:
@@ -284,7 +284,19 @@ class ImageView:
         edge2 = [(3,357),(2,306),(209,240),(300,240),(635,340),(635,357)]
         edge3 = [(4,356),(1,282),(246,198),(297,199),(639,317),(639,357)]
         edge4 = [(4,479),(1,282),(246,198),(297,199),(639,317),(639,479)]
+        
         roi_corners = np.array([edge4],dtype = np.int32)
+
+        height = size[0]
+        width = size[1]
+        roi_corners = [
+		(0, height),
+		(width*1 / 4, height*1 / 3),
+		(width*3 / 4, height*1 / 3),
+		(width, height),
+	    ]
+        roi_corners = np.array([roi_corners],dtype=np.int32)
+
         channel_count = self.img.shape[2]
         ignore_mask_color = (255,)*channel_count
         cv2.fillPoly(mask,roi_corners,ignore_mask_color)
@@ -422,7 +434,7 @@ class VideoView(ImageView):
 
 
             try:
-                passs
+                pass
             except Exception as e:
                 pass
 

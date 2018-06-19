@@ -9,13 +9,13 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--video",help="video file name")
-parser.add_argument("--thresh",help="detection threshold")
+parser.add_argument("--thresh",type=float,help="detection threshold")
 
 args = parser.parse_args()
 import py_test
 
 if args.thresh:
-    py_test.threshold = float(args.thresh)
+    py_test.threshold = args.thresh
 
 if args.video:
     py_test.init()
