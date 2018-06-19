@@ -145,9 +145,11 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             
             
             //check validation set(preventing overfitting)
-            //set_batch_network(net, 1);
+            int temp_batch = net->batch;
+            set_batch_network(net, 1);
             validate_detector_recall_param_net(net,train_valid_image_path,datacfg,cfgfile,weightfile);//train-set
             validate_detector_recall_param_net(net,valid_image_path,datacfg,cfgfile,weightfile);//test-set
+            set_batch_network(net, temp_batch);
             
             
         }
