@@ -27,7 +27,8 @@ def loadnet():
             #net = dn.load_net("cfg/yolov2-tiny.cfg","yolov2-tiny.weights",0) # mobilenet_yolo_coco
             net = dn.load_net("../dataset_test/cfg/yolov2-tiny-kym-run.cfg","backup1/yolov2-tiny-kym-train.backup",0)
             meta = dn.load_meta("../dataset_test/cfg/kym_test.data")
-        
+            #net = dn.load_net("../dataset_test/cfg/yolov2-tiny-kym-run.cfg","backup1/yolov2-tiny-kym-train_470000.weights",0)
+            
         else:
             net = dn.load_net("../test_data/test_training/yolov2-tiny-kym.cfg","backup/yolov2-tiny-kym_30000.weights",0)
             meta = dn.load_meta("../test_data/test_training/kym_test.data")
@@ -130,36 +131,57 @@ def MainOCAM():
     Stereo.main_stereo.RunThread() #read video, stereo calculation
 
     frm=0
+
+    while(True):
+        if Stereo.main_stereo.stereoReady:
+            break  #value not ready -> wait
+
     while(True):
         start = time.time()
         #ret,im = vid.read()  
-        if not Stereo.main_stereo.stereoReady:
-            continue  #value not ready -> wait
-       
+        
+        checkTime('initial')
         im = Stereo.main_stereo.frameL
         r = dn.detect_numpy(net,meta,im,thresh=threshold)     
-        
+        checkTime('detection')
         marked_im  = numpy.copy(im)
         camdatas = MarkImg(marked_im,r,stereo=True)
         loc.sensor_data.cameraDatas = camdatas
 
         line_left,line_right = line_detection.detectLine(im)
         marked_im = line_detection.draw_line(line_left,line_right,marked_im)
-
+        checkTime('line detection')
         frm+=1
         cv2.imshow("img",marked_im)
-        writeVideo = True
+        writeVideo = False
         if writeVideo:
             v.write(marked_im)
         key = cv2.waitKey(1)
+        
         if(key==ord('q')):
             break
         if(frm%100==0):
             print "fps: ", 1/(time.time()-start)
             print "spf: ", (time.time()-start)
+        
 
     if writeVideo:
         v.release()  
+    sys.exit()
+
+def checkTime(tag):
+    if not hasattr(checkTime,'start'):
+        checkTime.start = time.time()
+    if not hasattr(checkTime,'printTime'):
+        checkTime.printTime = False
+    
+    elapsed = time.time()-checkTime.start
+    
+    if checkTime.printTime:
+        print(tag,"elapsed:",elapsed)
+    checkTime.start = time.time()
+    return elapsed
+
 
 
 def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"):
@@ -167,24 +189,25 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,720), True)
     vid = cv2.VideoCapture(video_name)
     frm=0
+    
     while(True):
         start = time.time()
         ret, im = vid.read() 
         if not ret:
             break
-
+        checkTime('initial')
         r = dn.detect_numpy(net,meta,im,threshold)     
-        
+        checkTime('detection')
         marked_im  = numpy.copy(im)
         camdatas = MarkImg(marked_im,r,stereo=False)
         loc.sensor_data.cameraDatas = camdatas
 
         line_left,line_right = line_detection.detectLine(im)
         marked_im = line_detection.draw_line(line_left,line_right,marked_im)
-
+        checkTime('line detection')
         frm+=1
         cv2.imshow("img",marked_im)
-        writeVideo = True
+        writeVideo = False
         if writeVideo:
             v.write(marked_im)
         key = cv2.waitKey(1)
@@ -196,6 +219,7 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"
 
     if writeVideo:
         v.release()  
+    sys.exit()
         
 
 if __name__ is "__main__":
