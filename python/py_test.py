@@ -7,7 +7,9 @@ import numpy
 import cv2
 import math
 import line_detection
-
+import tool
+import threading
+from multiprocessing.pool import ThreadPool
 
 sys.path.append("../")
 tiny = True
@@ -123,14 +125,15 @@ threshold = .2
 
 def MainOCAM():
     runImgThread()
+    dn.runArrToImgLoop(getFrm)
     v = cv2.VideoWriter()
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,960), True)
-    global Stereo,marked_im
+    global Stereo,marked_im,frm_ready,cam_im
     import Stereo
     import Stereo.main_stereo
     Stereo.main_stereo.showDepth=False
     Stereo.main_stereo.RunThread() #read video, stereo calculation
-
+    pool = ThreadPool(processes=2)
     frm=0
 
     while(True):
@@ -141,17 +144,33 @@ def MainOCAM():
         start = time.time()
         #ret,im = vid.read()  
         
-        checkTime('initial')
+        tool.checkTime('initial')
         im = Stereo.main_stereo.frameL
-        r = dn.detect_numpy(net,meta,im,thresh=threshold)     
-        checkTime('detection')
+        cam_im = im
+        #r = dn.detect_numpy(net,meta,im,thresh=threshold)     
+
+        #r = dn.detectFromQ(net,meta,threshold)
+        result_r = pool.apply_async(dn.detectFromQ,(net,meta,threshold))
+        result_l = pool.apply_async(line_detection.detectLine,(im,))
+        
+
+        r = result_r.get()
+        #tool.checkTime('detection1')
+        line_left,line_right = result_l.get()
+        #tool.checkTime('detection2')
+        
+        #r= t1.join()
+        
+        
+        tool.checkTime('detection')
         marked_im_tmp  = numpy.copy(im)
         camdatas = MarkImg(marked_im_tmp,r,stereo=True)
         loc.sensor_data.cameraDatas = camdatas
 
-        line_left,line_right = line_detection.detectLine(im)
+        #line_left,line_right = line_detection.detectLine(im)
         marked_im = line_detection.draw_line(line_left,line_right,marked_im_tmp)
-        checkTime('line detection')
+        frm_ready= True
+        tool.checkTime('line detection')
         frm+=1
         #cv2.imshow("img",marked_im)
         writeVideo = False
@@ -170,24 +189,19 @@ def MainOCAM():
         v.release()  
     sys.exit()
 
-def checkTime(tag):
-    if not hasattr(checkTime,'start'):
-        checkTime.start = time.time()
-    if not hasattr(checkTime,'printTime'):
-        checkTime.printTime = False
-    
-    elapsed = time.time()-checkTime.start
-    
-    if checkTime.printTime:
-        print(tag,"elapsed:",elapsed)
-    checkTime.start = time.time()
-    return elapsed
+
 
 def showImgLoop():
-    global marked_im
+    global marked_im,frm_ready
     while True:
         if not 'marked_im' in globals():
             continue
+        if not 'frm_ready' in globals():
+            continue
+        if not frm_ready:
+            continue
+        else:
+            frm_ready = False
         cv2.imshow('output',marked_im)
 
         if line_detection.cropped_image is not None:
@@ -203,29 +217,51 @@ def runImgThread():
     t = threading.Thread(target=showImgLoop)
     t.start()
 
+def getFrm():
+    if 'cam_im' not in globals():
+        return None
+    else:
+        return cam_im
 
 def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"):
     runImgThread()
+    dn.runArrToImgLoop(getFrm)
     v = cv2.VideoWriter()
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,720), True)
     vid = cv2.VideoCapture(video_name)
     frm=0
-    global marked_im
+    pool = ThreadPool(processes=2)
+    
+    global marked_im,frm_ready,cam_im
     while(True):
         start = time.time()
         ret, im = vid.read() 
+        cam_im = im
         if not ret:
             break
-        checkTime('initial')
-        r = dn.detect_numpy(net,meta,im,threshold)     
-        checkTime('detection')
-        marked_im  = numpy.copy(im)
-        camdatas = MarkImg(marked_im,r,stereo=False)
+        tool.checkTime('initial')
+        #r = dn.detect_numpy(net,meta,im,threshold)     
+        #r = dn.detectFromQ(net,meta,threshold)
+
+        
+        result_r = pool.apply_async(dn.detectFromQ,(net,meta,threshold))
+        result_l = pool.apply_async(line_detection.detectLine,(im,))
+        
+
+        r = result_r.get()
+        #tool.checkTime('detection1')
+        line_left,line_right = result_l.get()
+        #tool.checkTime('detection2')
+
+        
+        marked_im_tmp  = numpy.copy(im)
+        camdatas = MarkImg(marked_im_tmp,r,stereo=False)
         loc.sensor_data.cameraDatas = camdatas
 
-        line_left,line_right = line_detection.detectLine(im)
-        marked_im = line_detection.draw_line(line_left,line_right,marked_im)
-        checkTime('line detection')
+        #line_left,line_right = line_detection.detectLine(im)
+        marked_im = line_detection.draw_line(line_left,line_right,marked_im_tmp)
+        frm_ready = True
+        tool.checkTime('line detection')
         frm+=1
         #cv2.imshow("img",marked_im)
         writeVideo = False
@@ -247,8 +283,8 @@ if __name__ is "__main__":
     init()
     #MainVideo('videoplayback.mp4')
     #MainVideo('../dataset_test/data/test_movie/test_video_0619.mp4')
-    MainVideo('../졸프영상파일/Test01.mp4')
-    #MainOCAM()
+    #MainVideo('../졸프영상파일/Test01.mp4')
+    MainOCAM()
 
 #main2()
        

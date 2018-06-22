@@ -1,6 +1,9 @@
 from ctypes import *
 import math
 import random
+import cv2
+import numpy as np
+import os 
 
 def sample(probs):
     s = sum(probs)
@@ -15,9 +18,9 @@ def sample(probs):
 def c_array(ctype, values):
     new_values = values.ctypes.data_as(POINTER(ctype))
     return new_values
-import cv2
+
 def array_to_image(arr):
-    import numpy as np
+    
     # need to return old values to avoid python freeing memory
     arr = cv2.cvtColor(arr,cv2.COLOR_BGR2RGB)
     arr = arr.transpose(2,0,1)
@@ -28,6 +31,26 @@ def array_to_image(arr):
     data = arr.ctypes.data_as(POINTER(c_float))
     im = IMAGE(w,h,c,data)
     return im, arr
+
+
+
+import Queue
+img_q = Queue.Queue(3)
+
+def array_to_image_loop(get_frm_function):
+    while True:
+        frm = get_frm_function()
+        if type(frm) is not np.ndarray:
+            continue
+        img = array_to_image(frm)
+        if not img_q.full():
+            img_q.put(img)
+
+
+import threading
+def runArrToImgLoop(get_frm_function):
+    t = threading.Thread(target=array_to_image_loop,args=(get_frm_function,))
+    t.start()
 
 
 class BOX(Structure):
@@ -70,7 +93,7 @@ getMatArr.restype = POINTER(c_float)
 '''
 
 #lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
-import os 
+
 #lib = CDLL("./libdarknet.so")
 
 #lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
@@ -214,12 +237,41 @@ def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
     
 import tool
 
+def detectFromQ(net, meta, thresh=.5, hier_thresh=.5, nms=.45):
+    while img_q.empty():
+        continue
+    im,_ = img_q.get()
+
+    num = c_int(0)
+    pnum = pointer(num)
+    tool.checkTime.printTime = False
+    tool.checkTime('a')
+    predict_image(net, im)
+    tool.checkTime('b')
+    #network_predict(net,im.data)
+    tool.checkTime('c')
+    dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
+    num = pnum[0]
+    if (nms): do_nms_obj(dets, num, meta.classes, nms);
+
+    res = []
+    for j in range(num):
+        for i in range(meta.classes):
+            if dets[j].prob[i] > 0:
+                b = dets[j].bbox
+                res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
+    res = sorted(res, key=lambda x: -x[1])
+    #free_image(im)
+    
+    free_detections(dets, num)
+    return res
+
 def detect_numpy(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     
     im, arr = array_to_image(image)
     num = c_int(0)
     pnum = pointer(num)
-    #tool.checkTime.printTime = True
+    tool.checkTime.printTime = True
     tool.checkTime('a')
     predict_image(net, im)
     tool.checkTime('b')
@@ -247,7 +299,7 @@ def detect_cam(net, meta, cam_img, thresh=.5, hier_thresh=.5, nms=.45):
     #im = load_image(cam_img, 0, 0)
     
     #im = kym_arr_to_image(cam_img)
-    im = array_to_image(cam_img)
+    im,_ = array_to_image(cam_img)
     rgbgr_image(im)
     
     
