@@ -4,6 +4,8 @@ import random
 import cv2
 import numpy as np
 import os 
+from multiprocessing.pool import ThreadPool
+from multiprocessing.sharedctypes import Value
 
 def sample(probs):
     s = sum(probs)
@@ -35,7 +37,7 @@ def array_to_image(arr):
 
 
 import Queue
-img_q = Queue.Queue(3)
+img_q = Queue.Queue(2)
 
 def array_to_image_loop(get_frm_function):
     while True:
@@ -237,11 +239,19 @@ def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
     
 import tool
 
+def calcRange(j_range,meta,dets,res):
+    for j in j_range:
+        for i in range(meta.classes):
+            if dets[j].prob[i] > 0:
+                b = dets[j].bbox
+                res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
+
+
 def detectFromQ(net, meta, thresh=.5, hier_thresh=.5, nms=.45):
     while img_q.empty():
         continue
     im,_ = img_q.get()
-
+    
     num = c_int(0)
     pnum = pointer(num)
     tool.checkTime.printTime = False
@@ -253,16 +263,31 @@ def detectFromQ(net, meta, thresh=.5, hier_thresh=.5, nms=.45):
     dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
     num = pnum[0]
     if (nms): do_nms_obj(dets, num, meta.classes, nms);
-
+    tool.checkTime('d')
     res = []
-    for j in range(num):
-        for i in range(meta.classes):
-            if dets[j].prob[i] > 0:
-                b = dets[j].bbox
-                res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
+
+    #pool.apply_async(calc_result,args=(j,))
+
+    #def calcrange(j_range):
+    #for j in range(num):
+    #    for i in range(meta.classes):
+    #        if dets[j].prob[i] > 0:
+    #            b = dets[j].bbox
+    #            res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
+    threads = []
+    for i in range(2):
+        rng = range(num)[i::2]
+        t = threading.Thread(target=calcRange,args=(rng,meta,dets,res))
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
+
+
     res = sorted(res, key=lambda x: -x[1])
     #free_image(im)
-    
+    tool.checkTime('e')
     free_detections(dets, num)
     return res
 

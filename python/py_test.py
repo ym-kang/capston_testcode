@@ -180,7 +180,7 @@ def MainOCAM():
         
         #if(key==ord('q')):
         #    break
-        if(frm%100==0):
+        if(frm%20==0):
             print "fps: ", 1/(time.time()-start)
             print "spf: ", (time.time()-start)
         
@@ -270,7 +270,7 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"
         #key = cv2.waitKey(1)
         #if(key==ord('q')):
         #    break
-        if(frm%100==0):
+        if(frm%30==0):
             print "fps: ", 1/(time.time()-start)
             print "spf: ", (time.time()-start)
 
@@ -283,8 +283,8 @@ if __name__ is "__main__":
     init()
     #MainVideo('videoplayback.mp4')
     #MainVideo('../dataset_test/data/test_movie/test_video_0619.mp4')
-    #MainVideo('../졸프영상파일/Test01.mp4')
-    MainOCAM()
+    MainVideo('../졸프영상파일/Test01.mp4')
+    #MainOCAM()
 
 #main2()
        
