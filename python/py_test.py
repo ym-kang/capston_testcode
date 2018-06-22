@@ -122,9 +122,10 @@ threshold = .2
 
 
 def MainOCAM():
+    runImgThread()
     v = cv2.VideoWriter()
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,960), True)
-    global Stereo
+    global Stereo,marked_im
     import Stereo
     import Stereo.main_stereo
     Stereo.main_stereo.showDepth=False
@@ -144,22 +145,22 @@ def MainOCAM():
         im = Stereo.main_stereo.frameL
         r = dn.detect_numpy(net,meta,im,thresh=threshold)     
         checkTime('detection')
-        marked_im  = numpy.copy(im)
-        camdatas = MarkImg(marked_im,r,stereo=True)
+        marked_im_tmp  = numpy.copy(im)
+        camdatas = MarkImg(marked_im_tmp,r,stereo=True)
         loc.sensor_data.cameraDatas = camdatas
 
         line_left,line_right = line_detection.detectLine(im)
-        marked_im = line_detection.draw_line(line_left,line_right,marked_im)
+        marked_im = line_detection.draw_line(line_left,line_right,marked_im_tmp)
         checkTime('line detection')
         frm+=1
-        cv2.imshow("img",marked_im)
+        #cv2.imshow("img",marked_im)
         writeVideo = False
         if writeVideo:
             v.write(marked_im)
-        key = cv2.waitKey(1)
+        #key = cv2.waitKey(1)
         
-        if(key==ord('q')):
-            break
+        #if(key==ord('q')):
+        #    break
         if(frm%100==0):
             print "fps: ", 1/(time.time()-start)
             print "spf: ", (time.time()-start)
@@ -182,14 +183,34 @@ def checkTime(tag):
     checkTime.start = time.time()
     return elapsed
 
+def showImgLoop():
+    global marked_im
+    while True:
+        if not 'marked_im' in globals():
+            continue
+        cv2.imshow('output',marked_im)
+
+        if line_detection.cropped_image is not None:
+            cv2.imshow('cropped',line_detection.cropped_image)
+
+        key = cv2.waitKey(1)
+
+        if(key=='q'):
+            sys.exit()
+
+def runImgThread():
+    import threading
+    t = threading.Thread(target=showImgLoop)
+    t.start()
 
 
 def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"):
+    runImgThread()
     v = cv2.VideoWriter()
     v.open("out.avi",cv2.VideoWriter_fourcc(*"H264"), 10, (1280,720), True)
     vid = cv2.VideoCapture(video_name)
     frm=0
-    
+    global marked_im
     while(True):
         start = time.time()
         ret, im = vid.read() 
@@ -206,13 +227,13 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"
         marked_im = line_detection.draw_line(line_left,line_right,marked_im)
         checkTime('line detection')
         frm+=1
-        cv2.imshow("img",marked_im)
+        #cv2.imshow("img",marked_im)
         writeVideo = False
         if writeVideo:
             v.write(marked_im)
-        key = cv2.waitKey(1)
-        if(key==ord('q')):
-            break
+        #key = cv2.waitKey(1)
+        #if(key==ord('q')):
+        #    break
         if(frm%100==0):
             print "fps: ", 1/(time.time()-start)
             print "spf: ", (time.time()-start)
@@ -224,9 +245,10 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"
 
 if __name__ is "__main__":
     init()
+    #MainVideo('videoplayback.mp4')
     #MainVideo('../dataset_test/data/test_movie/test_video_0619.mp4')
-    #MainVideo('../졸프영상파일/Test01.mp4')
-    MainOCAM()
+    MainVideo('../졸프영상파일/Test01.mp4')
+    #MainOCAM()
 
 #main2()
        

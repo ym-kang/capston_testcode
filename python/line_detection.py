@@ -42,10 +42,13 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness = 3):
 	return img
 		
 
+showImg = False
+g_image = None
+cropped_image =	None
 
 
 def detectLine(image):
-
+	global cropped_image
 	height = image.shape[0]
 	width = image.shape[1]
 
@@ -57,7 +60,8 @@ def detectLine(image):
 	]
 	#plt.figure()
 	#plt.imshow(image)
-	cv2.imshow('original',image)
+	if showImg:
+		cv2.imshow('original',image)
 
 	gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
@@ -68,7 +72,8 @@ def detectLine(image):
 		cannyed_image,
 			np.array([region_of_interest_vertices], np.int32),
 	)
-	cv2.imshow('crop',cropped_image)
+	if showImg:
+		cv2.imshow('crop',cropped_image)
 
 	lines = cv2.HoughLinesP(
 		cropped_image,

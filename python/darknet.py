@@ -72,7 +72,9 @@ getMatArr.restype = POINTER(c_float)
 #lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
 import os 
 #lib = CDLL("./libdarknet.so")
-lib = CDLL("./libdarknet.so", RTLD_GLOBAL)
+
+#lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
+lib = CDLL("libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
 lib.network_height.argtypes = [c_void_p]
@@ -199,7 +201,6 @@ def kym_arr_to_image(np_arr):
     return im
 
 
-
 #use ipl
 def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
     #im = load_image(cam_img, 0, 0)
@@ -211,13 +212,19 @@ def c_detect_cam(net, meta, c_img, thresh=.5, hier_thresh=.5, nms=.45):
     
     im = c_img
     
+import tool
 
 def detect_numpy(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     
     im, arr = array_to_image(image)
     num = c_int(0)
     pnum = pointer(num)
+    #tool.checkTime.printTime = True
+    tool.checkTime('a')
     predict_image(net, im)
+    tool.checkTime('b')
+    #network_predict(net,im.data)
+    #tool.checkTime('c')
     dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
     num = pnum[0]
     if (nms): do_nms_obj(dets, num, meta.classes, nms);
