@@ -173,7 +173,7 @@ def MainOCAM():
         tool.checkTime('line detection')
         frm+=1
         #cv2.imshow("img",marked_im)
-        writeVideo = False
+        
         if writeVideo:
             v.write(marked_im)
         #key = cv2.waitKey(1)
@@ -222,7 +222,7 @@ def getFrm():
         return None
     else:
         return cam_im
-
+writeVideo = False
 def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"):
     runImgThread()
     dn.runArrToImgLoop(getFrm)
@@ -264,7 +264,7 @@ def MainVideo(video_name = "../dataset_test/data/test_movie/test_video_0531.mp4"
         tool.checkTime('line detection')
         frm+=1
         #cv2.imshow("img",marked_im)
-        writeVideo = False
+        
         if writeVideo:
             v.write(marked_im)
         #key = cv2.waitKey(1)

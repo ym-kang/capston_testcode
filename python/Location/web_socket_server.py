@@ -10,6 +10,7 @@ import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
 import tornado.web
+
 import socket
 '''
 This is a simple Websocket Echo server that uses the Tornado websocket handler.
@@ -86,6 +87,7 @@ application = tornado.web.Application([
  
  #메인 함수
 def ServerThreadMain():
+    
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(9000)
     myIP = socket.gethostbyname(socket.gethostname())
