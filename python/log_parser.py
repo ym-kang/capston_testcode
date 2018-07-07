@@ -4,7 +4,7 @@
 
 def log_parse():
     data_arr = []
-    with open("log/training.log") as f:
+    with open("training.log") as f:
         content = f.readlines()
 
     
@@ -17,16 +17,26 @@ def log_parse():
     for dat in data_arr:
         
         content = dat.replace("\n","").replace("\t"," ")
-        content = content.split(" ")
+        content = content.split()
+        #content =" ".join(content)
         if("detector.c:142:" in content):
             time = content[1]
             counter = 1
             avg_loss = content[6]
         elif("detector.c:591:" in content):
-            if(counter==1):
-                training_set_iou = content[22]
-            else:
-                test_set_iou = content[22]
+            try:
+                if(counter==1):
+                    training_set_iou = content[10]
+                    #val = training_set_iou.replace("%","")
+                    #val = float(val)
+                else:
+                    test_set_iou = content[10]
+                    #val = training_set_iou.replace("%","")
+                    #val = float(val)
+            except:
+                counter = 0
+                continue
+
             counter+=1
             
         if(counter==3):
@@ -47,23 +57,50 @@ def log_parse():
 
 result = log_parse()
 
-a = 1
-import matplotlib.pyplot as plot
+
+
+left  = 0.125  # the left side of the subplots of the figure
+right = 0.7    # the right side of the subplots of the figure
+bottom = 0.1   # the bottom of the subplots of the figure
+top = 0.9      # the top of the subplots of the figure
+wspace = 0.2   # the amount of width reserved for blank space between subplots
+hspace = 0.4   # the amount of height reserved for white space between subplots
+
+import matplotlib.pyplot as plt
 
 def show_graph(log_data):
 
-    x = [i for i in range(len(log_data))]
-    y = [data[1] for data in log_data]
+    x = [i*100 for i in range(len(log_data))]
+    y = [float(data[1]) for data in log_data]
     y2 =[float(data[2].replace("%","")) for data in log_data]
     y3 =[float(data[3].replace("%","")) for data in log_data]
-    plot.subplot(211)
-    plot.plot(x ,y )
-    plot.subplot(212)
-    plot.plot(x,y2,"r-",x,y3,"b-")
+    #fig, axes = plot.subplots(2,1)
+    #fig.tight_layout()
+    plt.subplot(211)
+    plt.plot(x ,y )
+    plt.title("Loss Decay")
+    plt.xlabel("iteration")
+    plt.ylabel("avg loss")
+    axes = plt.gca()
+    #axes.set_xlim([0,40100])
+
+
+
+    plt.subplot(212) 
+    test1, = plt.plot(x,y2,"r-",label="Train Set")
+    test2, = plt.plot(x,y3,"b-",label="Test Set")
+    plt.legend(handles=[test1,test2])
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+    plt.title("Train&Test Set IOU")
+    plt.xlabel("iteration")
+    plt.ylabel("IOU")
     
-    plot.show()
+    plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+    axes = plt.gca()
+    #axes.set_xlim([0,40100])
+    plt.show()
 
     pass
-
 
 show_graph(result)
