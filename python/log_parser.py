@@ -1,6 +1,6 @@
 
 
-
+import numpy as np
 
 def log_parse():
     data_arr = []
@@ -68,12 +68,21 @@ hspace = 0.4   # the amount of height reserved for white space between subplots
 
 import matplotlib.pyplot as plt
 
+
+def smooth(y, box_pts):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='same')
+    return y_smooth
+
+
 def show_graph(log_data):
 
     x = [i*100 for i in range(len(log_data))]
     y = [float(data[1]) for data in log_data]
     y2 =[float(data[2].replace("%","")) for data in log_data]
+    #y2= smooth(y2,10)
     y3 =[float(data[3].replace("%","")) for data in log_data]
+    #y3 = smooth(y3,10)
     #fig, axes = plot.subplots(2,1)
     #fig.tight_layout()
     plt.subplot(211)
