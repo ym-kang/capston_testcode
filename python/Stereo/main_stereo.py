@@ -59,9 +59,14 @@ def calculateDist(x,y):
 	#sensor size 4.96x3.72mm  https://www.digicamdb.com/sensor-sizes/
 	#focal length = 3.6mm
 	Distance =0.0
-	if(average!=0):
-		Distance = 0.120 * 0.0036 /(average*0.00496)
+	return map3d[y][x][2],average
+	
 
+
+	if(average!=0):
+		Distance = 0.120 * 0.0036 /(average*0.00496/1280)
+	
+		#Distance = baseline * fical_length / (disparity * imagesansor_width/horizontal_resolution)
 	#Distance = np.around(Distance*0.01, decimals=2)
 	#print('x,y: '+str(x),str(y))
 	#print('Distance : ' + str(Distance) + ' m')
@@ -79,10 +84,11 @@ ws=wb.active
 #Termination criteria
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 criteria_stereo = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
+#http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
 # Prepare object points
 objp = np.zeros((9*6,3), np.float32)
-objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2)
+box_size =  24/1000.0 #checker board box size (m)
+objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2)*box_size
 
 # Arrays to store object points and image points from all images
 objpoints = []
@@ -100,6 +106,9 @@ for i in range (0,20):
 	print(t)
 	ChessImgR = cv2.imread('python/Stereo/imgs/chessboard-R'+t+'.png',0)
 	ChessImgL = cv2.imread('python/Stereo/imgs/chessboard-L'+t+'.png',0)
+	ChessImgL = cv2.resize(ChessImgL,(0,0),fx=.5,fy=.5)
+	ChessImgR = cv2.resize(ChessImgR,(0,0),fx=.5,fy=.5)
+	
 	retR, cornersR = cv2.findChessboardCorners(ChessImgR, (9,6),None)
 	retL, cornersL = cv2.findChessboardCorners(ChessImgL, (9,6),None)
 
@@ -155,18 +164,20 @@ Right_Stereo_Map = cv2.initUndistortRectifyMap(MRS, dRS, RR, PR, ChessImgR.shape
 #*******************************************
 
 # Create StereoSGBM and prepare all parameters
-window_size = 3
-min_disp = 2
-num_disp = 130-min_disp
+window_size = 5
+min_disp = -10
+num_disp = 128  #-min_disp
 stereo = cv2.StereoSGBM_create(minDisparity = min_disp,
 	numDisparities = num_disp,
-	blockSize = window_size,
-	uniquenessRatio = 10,
-	speckleWindowSize = 100,
-	speckleRange = 32,
-	disp12MaxDiff = 5,
+	blockSize = 20,
+	uniquenessRatio = 5,
+	speckleWindowSize = 20,
+	speckleRange = 7,
+	disp12MaxDiff = 10,
 	P1 = 8*3*window_size**2,
-	P2 = 32*3*window_size**2)
+	P2 = 32*3*window_size**2,
+	mode = cv2.StereoSGBM_MODE_SGBM)
+
 
 # Used for the filtered image
 stereoR = cv2.ximgproc.createRightMatcher(stereo)
@@ -183,7 +194,7 @@ wls_filter.setSigmaColor(sigma)
 #************************************
 #***** Starting the StreoVision *****
 #************************************
-useOcam = True
+useOcam = False
 
 if useOcam:
 	# Call the two cameras
@@ -219,11 +230,11 @@ def GetFrame():
 			# start reading Camera images
 			camR, camL = test.GetFrame(mode=2)
 
-			frameR = cv2.cvtColor(camR, cv2.COLOR_BAYER_GB2BGR)
-			frameL = cv2.cvtColor(camL, cv2.COLOR_BAYER_GB2BGR)
+			tframeR = cv2.cvtColor(camR, cv2.COLOR_BAYER_GB2BGR)
+			tframeL = cv2.cvtColor(camL, cv2.COLOR_BAYER_GB2BGR)
 
-			#frameR = cv2.resize(frameR,(0,0),fx=0.5,fy=0.5)
-			#frameL = cv2.resize(frameL,(0,0),fx=0.5,fy=0.5)
+			frameR = cv2.resize(tframeR,(0,0),fx=0.5,fy=0.5)
+			frameL = cv2.resize(tframeL,(0,0),fx=0.5,fy=0.5)
 
 		else:
 			ret,frm = cap.read()
@@ -234,6 +245,55 @@ def GetFrame():
 			count = 0
 			print("cam fps:"+str(round(1/(time.time()-start),2)))
 		
+
+def CalculateStereoTest(imgL, imgR):
+	global disp,map3d
+	Left_nice = cv2.remap(imgL, Left_Stereo_Map[0], Left_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT, 0)
+	Right_nice = cv2.remap(imgR, Right_Stereo_Map[0], Right_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT,0)
+	if showDepth:
+		cv2.imshow("Left_nice",Left_nice)
+		cv2.imshow("Right_nice",Right_nice)
+##	# Draw Red lines
+##	For line in range(0, int(Right_nice.shape[0]/20)) : # Draw the lines on the images Then numer of line is defines by the image Size/20
+##		Left_nice[line*20,:]=(0,0,255)
+##		Right_nice[line*20,:]=(0,0,255)
+##
+##	For line in range(0, int(frameR.shape[0]/20)): # Draw the lines on the images then numer of line is defines by the image size/20
+##		frameL[line*20,:]=(0,255,0)
+##		frameR[line*20,:]=(0,255,0)
+
+	# Show the Undistorted images
+	#cv2.imshow('Both Images', np.hstack([Left_nice, Right_nice]))
+	#cv2.imshow('Normal', np.hstack([frameL, frameR]))
+
+	# Convert from color(BGR) to gray
+	try:
+		grayR = cv2.cvtColor(Right_nice, cv2.COLOR_BGR2GRAY)
+		grayL = cv2.cvtColor(Left_nice, cv2.COLOR_BGR2GRAY)
+	except:
+		grayR = Right_nice
+		grayL = Left_nice
+
+	# Compute the 2 images for the Depth_image
+	disp_temp = stereo.compute(grayL, grayR)#.astype(np.float32)/16
+	
+	dispL = disp_temp
+	dispR = stereoR.compute(grayR, grayL)
+	dispL = np.int16(dispL)
+	dispR = np.int16(dispR)
+
+	# Using the WLS filter
+	filteredImg = wls_filter.filter(dispL, grayL, None, dispR)
+	filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX)
+	filteredImg = np.uint8(filteredImg)
+	#cv2.imshow('Disparity Map', filteredImg)
+	disp=((disp_temp.astype(np.float32)/16)-min_disp)#/num_disp
+	
+	#https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
+	map3d = cv2.reprojectImageTo3D(disp,Q)
+	showDisparity(filteredImg)
+
+	return Left_nice,Right_nice
 
 
 
@@ -253,6 +313,7 @@ def GetFrameAndCalculateStereo():
 			continue
 		count = count+1
 		start = time.time()
+		
 		# Rectify the images on rotation and alignement
 		Left_nice = cv2.remap(frameL, Left_Stereo_Map[0], Left_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT, 0)
 		Right_nice = cv2.remap(frameR, Right_Stereo_Map[0], Right_Stereo_Map[1], cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT,0)
@@ -268,9 +329,6 @@ def GetFrameAndCalculateStereo():
 	##		frameL[line*20,:]=(0,255,0)
 	##		frameR[line*20,:]=(0,255,0)
 
-		# Show the Undistorted images
-		#cv2.imshow('Both Images', np.hstack([Left_nice, Right_nice]))
-		#cv2.imshow('Normal', np.hstack([frameL, frameR]))
 
 		# Convert from color(BGR) to gray
 		grayR = cv2.cvtColor(Right_nice, cv2.COLOR_BGR2GRAY)
@@ -278,6 +336,7 @@ def GetFrameAndCalculateStereo():
 
 		# Compute the 2 images for the Depth_image
 		disp_temp = stereo.compute(grayL, grayR)#.astype(np.float32)/16
+		
 		dispL = disp_temp
 		dispR = stereoR.compute(grayR, grayL)
 		dispL = np.int16(dispL)
@@ -316,7 +375,7 @@ def GetFrameAndCalculateStereo():
 	test.Stop()
 	cv2.destroyAllWindows()
 	test.Close()
-
+cv_window_wait_time = 1
 def showDisparity(filteredImg):
 	# Colors map
 	# Filtering the Results with a closing filter
@@ -334,7 +393,7 @@ def showDisparity(filteredImg):
 
 	# Mouse click
 	cv2.setMouseCallback("Filtered Color Depth", coords_mouse_disp, filt_Color)
-	cv2.waitKey(1)
+	cv2.waitKey(cv_window_wait_time)
 
 
 import threading
