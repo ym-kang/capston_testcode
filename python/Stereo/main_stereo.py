@@ -23,7 +23,7 @@ def coords_mouse_disp(event,x,y,flags,param):
 		print('Distance : ' + str(Distance) + ' m')
 '''
 def coords_mouse_disp(event,x,y,flags,param):
-	if event == cv2.EVENT_LBUTTONDBLCLK:	
+	if event == cv2.EVENT_LBUTTONDOWN:	
 		dist,disp = calculateDist(x,y)
 		print("distance="+str(dist))
 		print("disparity="+str(disp))
@@ -90,74 +90,130 @@ objp = np.zeros((9*6,3), np.float32)
 box_size =  24/1000.0 #checker board box size (m)
 objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2)*box_size
 
-# Arrays to store object points and image points from all images
-objpoints = []
-imgpointsR = []
-imgpointsL = []
 
-# Start calibration from the camera
-print('Starting calibration for the 2 cameras... ')
+def cali_save():
+	# Arrays to store object points and image points from all images
+	objpoints = []
+	imgpointsR = []
+	imgpointsL = []
+	global retR, mtxR, distR, rvecsR, tvecsR, retS, MLS, dLS, MRS, dRS, R, T, E, F, RL, RR, PL, PR, Q, roiL, roiR, Shape
+	# Start calibration from the camera
+	print('Starting calibration for the 2 cameras... ')
 
-# Call all saved images
-for i in range (0,20):
-	if(i%1!=0):
-		continue
-	t= str(i)
-	print(t)
-	ChessImgR = cv2.imread('python/Stereo/imgs/chessboard-R'+t+'.png',0)
-	ChessImgL = cv2.imread('python/Stereo/imgs/chessboard-L'+t+'.png',0)
-	ChessImgL = cv2.resize(ChessImgL,(0,0),fx=.5,fy=.5)
-	ChessImgR = cv2.resize(ChessImgR,(0,0),fx=.5,fy=.5)
+	# Call all saved images
+	for i in range (0,20):
+		if(i%1!=0):
+			continue
+		t= str(i)
+		print(t)
+		ChessImgR = cv2.imread('python/Stereo/imgs/chessboard-R'+t+'.png',0)
+		ChessImgL = cv2.imread('python/Stereo/imgs/chessboard-L'+t+'.png',0)
+		ChessImgL = cv2.resize(ChessImgL,(0,0),fx=.5,fy=.5)
+		ChessImgR = cv2.resize(ChessImgR,(0,0),fx=.5,fy=.5)
+		
+		retR, cornersR = cv2.findChessboardCorners(ChessImgR, (9,6),None)
+		retL, cornersL = cv2.findChessboardCorners(ChessImgL, (9,6),None)
+
+		if (retR == True) & (retL == True):
+			objpoints.append(objp)
+			cv2.cornerSubPix(ChessImgR, cornersR,(11,11),(-1,-1),criteria)
+			cv2.cornerSubPix(ChessImgL, cornersL,(11,11),(-1,-1),criteria)
+			imgpointsR.append(cornersR)
+			imgpointsL.append(cornersL)
+
+	Shape = ChessImgR.shape[::-1]
+	# Determine the new values for different parameters
+	#	 Right side
+	retR, mtxR, distR, rvecsR, tvecsR = cv2.calibrateCamera(objpoints, imgpointsR, ChessImgR.shape[::-1],None,None)
+	hR, wR = ChessImgR.shape[:2]
+	OmtxR, roiR = cv2.getOptimalNewCameraMatrix(mtxR, distR, (wR,hR),1,(wR,hR))
+
+	#	Left side
+	retL, mtxL, distL, rvecsL, tvecsL = cv2.calibrateCamera(objpoints, imgpointsL, ChessImgL.shape[::-1],None,None)
+	hL, wL = ChessImgL.shape[:2]
+	OmtxL, roiL = cv2.getOptimalNewCameraMatrix(mtxL, distL, (wL,hL),1,(wL,hL))
+
+	print('Cameras Ready to use')
+
+	#********************************************
+	#***** Calibrate the Cameras for Stereo *****
+	#********************************************
+
+	# StereoCalibrate function
+	flags = 0
+	flags |= cv2.CALIB_FIX_INTRINSIC
+	#flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
+	#flags |= cv2.CALIB_USE_INTRINSIC_GUESS
+	#flags |= cv2.CALIB_FIX_FOCAL_LENGTH
+	#flags |= cv2.CALIB_FIX_ASPECT_RATIO
+	#flags |= cv2.CALIB_ZERO_TANGENT_DIST
+	#flags |= cv2.CALIB_RATIONAL_MODEL
+	#flags |= cv2.CALIB_SAME_FOCAL_LENGTH
+	#flags |= cv2.CALIB_FIX_K3
+	#flags |= cv2.CALIB_FIX_K4
+	#flags |= cv2.CALIB_FIX_K5
+	retS, MLS, dLS, MRS, dRS, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpointsL, imgpointsR, mtxL, distL, mtxR, distR, ChessImgR.shape[::-1], criteria_stereo, flags)
+
+	# StereoRectify function
+	rectify_scale = 0
+	RL, RR, PL, PR, Q, roiL, roiR = cv2.stereoRectify(MLS, dLS, MRS, dRS, Shape, R, T, rectify_scale,(0,0)) # last parameter is alpha, if 0 croped, if 1 not croped
+
+	fs = cv2.FileStorage()
+	fs.open("cali.yaml",cv2.FILE_STORAGE_WRITE)
+	fs.write("MLS",MLS)
+	fs.write("dLS",dLS)
+	fs.write("MRS",MRS)
+	fs.write("dRS",dRS)
+	fs.write("mtxR",mtxR)
+	fs.write("mtxL",mtxL)
+	fs.write("distR",distR)
+	fs.write("distL",distL)
+	fs.write("R",R)
+	fs.write("T",T)
+	fs.write("E",E)
+	fs.write("F",F)
+
+	#rectification
+	fs.write("RL",RL)
+	fs.write("RR",RR)
+	fs.write("PL",PL)
+	fs.write("PR",PR)
+	fs.write("Q",Q)
+
+	fs.write("Shape",Shape)
 	
-	retR, cornersR = cv2.findChessboardCorners(ChessImgR, (9,6),None)
-	retL, cornersL = cv2.findChessboardCorners(ChessImgL, (9,6),None)
 
-	if (retR == True) & (retL == True):
-		objpoints.append(objp)
-		cv2.cornerSubPix(ChessImgR, cornersR,(11,11),(-1,-1),criteria)
-		cv2.cornerSubPix(ChessImgL, cornersL,(11,11),(-1,-1),criteria)
-		imgpointsR.append(cornersR)
-		imgpointsL.append(cornersL)
+def cali_load():
+	global retR, mtxR, distR, rvecsR, tvecsR, retS, MLS, dLS, MRS, dRS, R, T, E, F, RL, RR, PL, PR, Q, roiL, roiR, Shape
+	fs = cv2.FileStorage()
+	fs.open("cali.yaml",cv2.FILE_STORAGE_READ)
+	MLS = fs.getNode("MLS").mat()
+	dLS = fs.getNode("dLS").mat()
+	MRS = fs.getNode("MRS").mat()
+	dRS = fs.getNode("dRS").mat()
+	mtxR = fs.getNode("mtxR").mat()
+	mtxL = fs.getNode("mtxL").mat()
+	mtxR = fs.getNode("distR").mat()
+	mtxL = fs.getNode("distL").mat()
 
-# Determine the new values for different parameters
-#	 Right side
-retR, mtxR, distR, rvecsR, tvecsR = cv2.calibrateCamera(objpoints, imgpointsR, ChessImgR.shape[::-1],None,None)
-hR, wR = ChessImgR.shape[:2]
-OmtxR, roiR = cv2.getOptimalNewCameraMatrix(mtxR, distR, (wR,hR),1,(wR,hR))
 
-#	Left side
-retL, mtxL, distL, rvecsL, tvecsL = cv2.calibrateCamera(objpoints, imgpointsL, ChessImgL.shape[::-1],None,None)
-hL, wL = ChessImgL.shape[:2]
-OmtxL, roiL = cv2.getOptimalNewCameraMatrix(mtxL, distL, (wL,hL),1,(wL,hL))
+	RL = fs.getNode("RL").mat()
+	RR = fs.getNode("RR").mat()
+	PL = fs.getNode("PL").mat()
+	PR = fs.getNode("PR").mat()
+	Q = fs.getNode("Q").mat()
+	R = fs.getNode("R").mat()
+	T = fs.getNode("T").mat()
+	E = fs.getNode("E").mat()
+	F = fs.getNode("F").mat()
+	Shape = fs.getNode("Shape").mat()
 
-print('Cameras Ready to use')
-
-#********************************************
-#***** Calibrate the Cameras for Stereo *****
-#********************************************
-
-# StereoCalibrate function
-flags = 0
-flags |= cv2.CALIB_FIX_INTRINSIC
-#flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
-#flags |= cv2.CALIB_USE_INTRINSIC_GUESS
-#flags |= cv2.CALIB_FIX_FOCAL_LENGTH
-#flags |= cv2.CALIB_FIX_ASPECT_RATIO
-#flags |= cv2.CALIB_ZERO_TANGENT_DIST
-#flags |= cv2.CALIB_RATIONAL_MODEL
-#flags |= cv2.CALIB_SAME_FOCAL_LENGTH
-#flags |= cv2.CALIB_FIX_K3
-#flags |= cv2.CALIB_FIX_K4
-#flags |= cv2.CALIB_FIX_K5
-retS, MLS, dLS, MRS, dRS, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpointsL, imgpointsR, mtxL, distL, mtxR, distR, ChessImgR.shape[::-1], criteria_stereo, flags)
-
-# StereoRectify function
-rectify_scale = 0
-RL, RR, PL, PR, Q, roiL, roiR = cv2.stereoRectify(MLS, dLS, MRS, dRS, ChessImgR.shape[::-1], R, T, rectify_scale,(0,0)) # last parameter is alpha, if 0 croped, if 1 not croped
+#cali_save()
+cali_load()
 
 # initUndistortRectifyMap function
-Left_Stereo_Map = cv2.initUndistortRectifyMap(MLS, dLS, RL, PL, ChessImgR.shape[::-1], cv2.CV_16SC2)
-Right_Stereo_Map = cv2.initUndistortRectifyMap(MRS, dRS, RR, PR, ChessImgR.shape[::-1], cv2.CV_16SC2)
+Left_Stereo_Map = cv2.initUndistortRectifyMap(MLS, dLS, RL, PL, (Shape[0],Shape[1]), cv2.CV_16SC2)
+Right_Stereo_Map = cv2.initUndistortRectifyMap(MRS, dRS, RR, PR, (Shape[0],Shape[1]), cv2.CV_16SC2)
 
 #*******************************************
 #***** Parameters for the StereoVision *****
@@ -287,7 +343,7 @@ def CalculateStereoTest(imgL, imgR):
 	filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX)
 	filteredImg = np.uint8(filteredImg)
 	#cv2.imshow('Disparity Map', filteredImg)
-	disp=((disp_temp.astype(np.float32)/16)-min_disp)#/num_disp
+	disp=((disp_temp.astype(np.float32)/16.)-min_disp)#/num_disp
 	
 	#https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
 	map3d = cv2.reprojectImageTo3D(disp,Q)

@@ -18,7 +18,6 @@ Please run `pip install tornado` with python of version 2.7.9 or greater to inst
 This program will echo back the reverse of whatever it recieves.
 Messages are output to the terminal for debuggin purposes. 
 ''' 
-names = ['flare_signal','warning_tripod','dog','cat','deer','pedestrian','car','fire_truck','ambulance']
 import json
 import random
 import sensor_data

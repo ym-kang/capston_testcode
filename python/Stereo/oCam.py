@@ -6,7 +6,7 @@ import time
 import sys
 import numpy as np
 #from matplotlib import pyplot as plt
-
+import main_stereo
 devpath = liboCams.FindCamera('oCam')
 if devpath is None:
 	exit()
@@ -29,25 +29,20 @@ frame_cnt = 0
 while True:
 	
 	
-	stereo = cv2.StereoBM_create(numDisparities = 16 , blockSize = 15)
-	frameL, frameR = test.GetFrame(mode=2)
 	
-	grayR = cv2.cvtColor(frameR, cv2.COLOR_BAYER_GB2GRAY)
-	grayL = cv2.cvtColor(frameL, cv2.COLOR_BAYER_GB2GRAY)
-
-	rgbR = cv2.cvtColor(frameR, cv2.COLOR_BAYER_GB2BGR)
-	rgbL = cv2.cvtColor(frameL, cv2.COLOR_BAYER_GB2BGR)
-
-	disparity = stereo.compute(grayL, grayR)
+	frameL, frameR = test.GetFrame(mode=2)
+	frameL = cv2.resize(frameL,(0,0),fx=.5,fy=.5)
+	frameR = cv2.resize(frameR,(0,0),fx=.5,fy=.5)
+	main_stereo.CalculateStereoTest(frameL,frameR)
 
 #	plt.imshow(disparity,'gray')
 #	plt.ion()
 #	plt.show()
 #	plt.pause(0.00000001)
 
-	cv2.imshow(test.cam.card+' L', rgbL)
-	cv2.imshow(test.cam.card+' R', rgbR)
-	cv2.imshow('disparity', disparity)
+	#cv2.imshow(test.cam.card+' L', rgbL)
+	#cv2.imshow(test.cam.card+' R', rgbR)
+	#cv2.imshow('disparity', disparity)
 
 	char = cv2.waitKey(1)
 	if char == 27:

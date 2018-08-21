@@ -24,19 +24,13 @@ def loadnet():
         meta = dn.load_meta("cfg/coco.data")
     elif(tiny):
         if(movie):
-            #net = dn.load_net("cfg/yolov2-tiny.cfg","yolov2-tiny.weights",0)
-            #meta = dn.load_meta("cfg/coco.data")
-            #net = dn.load_net("cfg/yolov2-tiny.cfg","yolov2-tiny.weights",0) # mobilenet_yolo_coco
-            net = dn.load_net("../dataset_test/cfg/yolov2-tiny-kym-run.cfg","backup1/yolov2-tiny-kym-train.backup",0)
+            net = dn.load_net("../dataset_test/cfg/yolov3-tiny-kym-run.cfg","backup1/yolov3-tiny-kym-train.backup",0)
             meta = dn.load_meta("../dataset_test/cfg/kym_test.data")
-            #net = dn.load_net("../dataset_test/cfg/yolov2-tiny-kym-run.cfg","backup1/yolov2-tiny-kym-train_470000.weights",0)
             
         else:
             net = dn.load_net("../test_data/test_training/yolov2-tiny-kym.cfg","backup/yolov2-tiny-kym_30000.weights",0)
             meta = dn.load_meta("../test_data/test_training/kym_test.data")
-        
-        #net = dn.load_net("cfg/yolov2-tiny-voc.cfg","backup/yolov2-tiny-voc.backup",0)
-        #meta = dn.load_meta("cfg/voc.data")
+
     else:
         net = dn.load_net("cfg/yolov3.cfg","yolov3.weights",0)
         meta = dn.load_meta("cfg/coco.data")
@@ -283,8 +277,8 @@ if __name__ is "__main__":
     init()
     #MainVideo('videoplayback.mp4')
     #MainVideo('../dataset_test/data/test_movie/test_video_0619.mp4')
-    MainVideo('../졸프영상파일/Test01.mp4')
-    #MainOCAM()
+    #MainVideo()
+    MainOCAM()
 
 #main2()
        

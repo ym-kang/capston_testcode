@@ -33,12 +33,9 @@ if useOcam:
 	if devpath is None:
 		exit()
 
-	test = liboCams.oCams(devpath, verbose=1)
+	test = liboCams.oCams(devpath, verbose=0)
 	fmtlist = test.GetFormatList()
 	ctrlist = test.GetControlList()
-	test.Close()
-
-	test = liboCams.oCams(devpath, verbose=0)
 	test.Set(fmtlist[0])
 	name = test.GetName()
 	test.SetControl(10094850,400) # control exposure
@@ -51,6 +48,8 @@ else:
 while True:
 	if useOcam:
 		camL, camR = test.GetFrame(mode=2)
+		camL = cv2.resize(camL,(640,480))
+		camR = cv2.resize(camR,(640,480))
 	else:
 		ret, camL = cap.read()
 		camR= camL
